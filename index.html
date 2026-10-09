@@ -896,6 +896,9 @@ body:has(footer .fresh-end) #foot{display:none}
 .wrow .wcap{line-height:1.35}.wrow .wcap b{color:var(--fg);font-weight:700}
 #lbody .wrow,#race .wrow{margin-bottom:0}
 .wtot{color:var(--me);font-weight:700}
+.statgrid.six.ps-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.statgrid.six.ps-row{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0}
+.ps-ch{font-family:var(--sans);font-size:11px;font-weight:700;margin-left:2px;vertical-align:4px}.ps-ch.up{color:var(--good)}.ps-ch.dn{color:var(--bad)}
 .statgrid.six.wpg{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0;border-top:0}
 .ob{position:fixed;inset:0;z-index:210;background:var(--bg);overflow:hidden;transition:opacity .4s,transform .4s;animation:obIn .45s ease}
 @keyframes obIn{from{opacity:0}}
@@ -1203,7 +1206,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791563738";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791565557";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1873,6 +1876,11 @@ function playerSheet(key){
   const mineP=p.team===ME,mult=p.mult?Math.round((p.mult.toi*p.mult.pp*p.mult.ctx-1)*100):0;
   const rank=1+P.filter(x=>x.final>p.final).length;
   const ppg=p.gp?(p.pts/p.gp):0;
+  const prank=1+P.filter(x=>x.pts>p.pts).length,ptie=P.filter(x=>x!==p&&x.pts===p.pts).length>0;
+  const ratio=p.gp&&p.base_rate?ppg/p.base_rate:null;
+  const pace=ratio==null?"":ratio>=2.5?"more than double":ratio>=1.8?"about double":ratio>=1.25?"well above":ratio>=1.08?"a bit above":ratio>0.92?"right around":ratio>0.75?"a bit below":ratio>0.4?"well below":"far below";
+  const doing=!p.gp?"Hasn't played a game yet this season.":ratio==null?`${p.pts} point${p.pts===1?"":"s"} in ${p.gp} game${p.gp===1?"":"s"}.`:`Scoring ${pace} his preseason projection${p.gp<10?` (${p.gp} game${p.gp===1?"":"s"} in, so it's early)`:""}.`;
+  const tsh=p.toi&&p.base_toi&&Math.abs(p.toi-p.base_toi)>=30?(p.toi>p.base_toi?" ▲":" ▼"):"";
   const LINE={f1:"first line",f2:"second line",f3:"third line",f4:"fourth line",d1:"top pair",d2:"second pair",d3:"third pair"};
   const role=[p.line?LINE[p.line]:null,p.pp===1?"first power-play unit":p.pp===2?"second power-play unit":p.pp===0?"no power-play time":null].filter(Boolean);
   const toiTxt=p.toi?`playing ${mmss(p.toi)} a night${p.base_toi?` (last season ${mmss(p.base_toi)}${Math.abs(p.toi-p.base_toi)>=30?(p.toi>p.base_toi?" ▲":" ▼"):""})`:""}`:"";
@@ -1885,14 +1893,15 @@ function playerSheet(key){
   openSheet(`<div class="who" style="padding-right:44px">${av(p,"lg")}<div><div id="sheet-title" style="font-size:19px;font-weight:700">${esc(p.name)}</div><div class="small">${esc(TEAMN[p.nhl]||"No NHL team")} · ${p.pos==="D"?"Defence":"Forward"} · ${mineP?"Your player":esc(p.team)}</div></div></div>
    ${chips(p,8,!!statusBox(p))}
    ${statusBox(p)}
-   <div class="pline"><div class="pv"><b>${p.pts}</b><i>/${Math.round(p.final)}</i></div><div class="pm"><span>Points / projected</span><div class="pbar"><i style="width:${Math.min(100,p.pts/Math.max(1,p.final)*100).toFixed(1)}%"></i></div></div><em title="Projection rank among all ${P.length} pool players">#${rank}<small>rank</small></em></div>${dv?`<p class="small" style="margin-top:6px">${dv}</p>`:""}${p.streak>=2?`<p style="margin-top:8px"><span class="badge up">${p.streak}-game point streak</span></p>`:""}
-   <div class="statgrid six"><div><b>${p.g}</b><span>G</span></div><div><b>${p.a}</b><span>A</span></div><div><b>${p.gp}</b><span>GP</span></div><div><b>${ppg.toFixed(2)}</b><span>P/GP</span></div><div><b>${p.sog??0}</b><span>SOG</span></div></div>
+   <div class="pline"><div class="pv"><b>${p.pts}</b><i>/${Math.round(p.final)}</i></div><div class="pm"><span>Points / projected</span><div class="pbar"><i style="width:${Math.min(100,p.pts/Math.max(1,p.final)*100).toFixed(1)}%"></i></div></div><em title="Projected rank among all ${P.length} pool players">#${rank}<small>Projected</small></em></div>${dv?`<p class="small" style="margin-top:6px">${dv}</p>`:""}${p.streak>=2?`<p style="margin-top:8px"><span class="badge up">${p.streak}-game point streak</span></p>`:""}
+   <div class="statgrid six ps-four"><div><b>${p.g}</b><span>G</span></div><div><b>${p.a}</b><span>A</span></div><div><b>${p.gp}</b><span>GP</span></div><div><b>${p.sog??0}</b><span>SOG</span></div></div>
    <div class="statgrid six wpg">${[["night","Last night"],["week","This week"],["month","This month"]].map(([k,l])=>{const s=winStat(p,k);return `<div><b>${!s.gp&&!s.pts?"–":s.pts}</b><span>${l}</span></div>`}).join("")}</div>
+   <h4>How he's doing</h4><p class="ptxt" style="margin:0 0 10px">${doing}</p><div class="statgrid six ps-row ps-doing"><div><b>${p.gp?ppg.toFixed(2):"–"}</b><span>Per game now</span></div><div><b>${p.base_rate?p.base_rate.toFixed(2):"–"}</b><span>Projected</span></div><div><b>#${prank}</b><span>${ptie?"Tied, pool":"Pool"} rank</span></div></div>
+   <h4>Next games</h4>${next.length?`<div class="nextg">${next.map(g=>{const o=g.home===p.nhl?g.away:g.home;return `<span><em>${g.home===p.nhl?"vs":"at"}</em>${tlogo(o,18)}<b>${o}</b><i>${fmtDate(g.date)}</i></span>`}).join("")}</div>`:`<p class="empty">No upcoming games in the schedule window.</p>`}
    <h4>Last ${Math.min(5,L.length)||""} game${Math.min(5,L.length)===1?"":"s"}</h4>${strip}
-   <h4>Role and shooting ${q("luck")}</h4><p class="ptxt">${roleTxt||"No line data yet."}</p>${luckTxt?`<p class="ptxt">${luckTxt}</p>`:""}
+   <h4>Role and shooting ${q("luck")}</h4>${p.line||p.pp!=null||p.toi?`<div class="statgrid six ps-row"><div><b>${p.line?p.line.slice(1):"–"}</b><span>${p.pos==="D"?"Pair":"Line"}</span></div><div><b>${p.pp?"PP"+p.pp:p.pp===0?"None":"–"}</b><span>Power play</span></div><div><b>${p.toi?mmss(p.toi):"–"}<small class="ps-ch ${tsh.includes("▲")?"up":"dn"}">${tsh}</small></b><span>Ice time</span></div></div>${p.toi&&p.base_toi?`<p class="small" style="margin-top:6px">${tsh?(p.toi>p.base_toi?"Up":"Down")+" from "+mmss(p.base_toi)+" a night last season.":"About the same as last season ("+mmss(p.base_toi)+" a night)."}</p>`:""}`:`<p class="ptxt">No line data yet.</p>`}${luckTxt?`<p class="ptxt">${luckTxt}</p>`:""}
    <h4>What he means for your odds</h4><div class="kv"><span>If he misses a month</span><span>${pct(base)} → <b>${pct(miss)}</b></span><span>If he breaks out (+25%)</span><span>${pct(base)} → <b>${pct(boom)}</b></span></div>
    ${mineP?"":`<p class="small" style="margin-top:6px">He plays for ${esc(p.team)}, so his slumps help you only as much as that team threatens you.</p>`}
-   <h4>Next games</h4>${next.length?`<div class="nextg">${next.map(g=>{const o=g.home===p.nhl?g.away:g.home;return `<span><em>${g.home===p.nhl?"vs":"at"}</em>${tlogo(o,18)}<b>${o}</b><i>${fmtDate(g.date)}</i></span>`}).join("")}</div>`:`<p class="empty">No upcoming games in the schedule window.</p>`}
    <details class="how"><summary>How we got ${Math.round(p.final)}</summary><p class="ptxt">${blend} He has ${p.pts} points so far and is expected to add about ${Math.round(p.ros)} more.</p><div class="kv"><span>Recent scoring pace (full season)</span><span>${p.my_full??"–"}</span><span>NHL.com (scaled)</span><span>${p.ext_full??"–"}</span><span>Role adjustment</span><span>${mult>0?"+":""}${mult}%</span><span>Expected from here</span><span>${Math.round(p.ros)}</span><span><b>Projected final</b></span><span><b>${Math.round(p.final)}</b></span></div></details>`);
 }
 function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(g.away,g.home),pc=x.pick?x.pick.c:null;
@@ -2023,7 +2032,7 @@ function movePill(){const b=document.querySelector('.tab[aria-selected="true"]')
 const CU={i:0};
 function unitize(root,anim){CU.i=0;root.querySelectorAll(".kpi .v,.tile .v,.statgrid b,.hsum b,.ov b").forEach(el=>{if(el.dataset.u)return;el.dataset.u=1;const m=el.textContent.trim().match(/^([+\-]?)(\d+(?:\.\d+)?)(%|st|nd|rd|th|pts)?$/);if(!m)return;
     const sign=m[1],val=+m[2],unit=m[3]||"";el.innerHTML=`${sign}<span class="cnt">${m[2]}</span>${unit?`<span class="u">${unit}</span>`:""}`;
-    if(anim&&!RM&&val>0){const c=el.querySelector(".cnt"),t0=performance.now()+(CU.i++)*90,d=1600;c.textContent="0";const dp=(m[2].split(".")[1]||"").length;const f=now=>{const k=Math.max(0,Math.min(1,(now-t0)/d)),e=1-Math.pow(1-k,3);c.textContent=(val*e).toFixed(dp);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}})}
+    if(false&&anim&&!RM&&val>0){const c=el.querySelector(".cnt"),t0=performance.now()+(CU.i++)*90,d=1600;c.textContent="0";const dp=(m[2].split(".")[1]||"").length;const f=now=>{const k=Math.max(0,Math.min(1,(now-t0)/d)),e=1-Math.pow(1-k,3);c.textContent=(val*e).toFixed(dp);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}})}
 function animateBars(root){requestAnimationFrame(()=>root.querySelectorAll(".bar i[data-w]").forEach(i=>i.style.width=i.dataset.w+"%"))}
 function setTab(id,scroll){$$(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===id));TABS.forEach(t=>$("#"+t).hidden=t!==id);$("#"+id).classList.remove("quiet");RENDER[id]();animateBars($("#"+id));unitize($("#"+id),true);movePill();if(scroll!==false)window.scrollTo({top:0});store.set("pool.tab",id)}
 function rerender(){const cur=store.get("pool.tab","today");RENDER[cur]();animateBars($("#"+cur));unitize($("#"+cur),false)}
