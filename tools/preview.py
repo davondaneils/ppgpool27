@@ -24,9 +24,9 @@ scroll sideways), console errors and missing files. Exit code 1 means something 
 Look at the PNGs too, phone first. Fixed elements (the phone tab bar) appear once, mid-page, in
 full-page shots; that's normal.
 
-Fonts: Google Fonts is usually blocked in sandboxes, so Barlow Condensed (the display face) is fetched
-once from npm (@fontsource/barlow-condensed) into tools/.fonts. Without it, headings fall back to a
-different width and line breaks won't match what members see.
+Fonts: Google Fonts is usually blocked in sandboxes, so the app's two faces, Barlow Condensed (display)
+and Inter (body), are fetched once from npm (@fontsource) into tools/.fonts. Without them, text falls
+back to other fonts with different widths, and line breaks and fit won't match what members see.
 """
 import argparse
 import datetime as dt
@@ -48,7 +48,10 @@ from build_site import bare_page, site_document  # noqa: E402  (same wrapper the
 
 ROOT = Path(__file__).resolve().parent.parent
 FONTS = ROOT / "tools" / ".fonts"
-WEIGHTS = [(w, s) for w in (600, 700, 800) for s in ("normal", "italic")]
+# (CSS family, npm package, file prefix, [(weight, style)])
+FACES = [("Barlow Condensed", "@fontsource/barlow-condensed@5.0.13", "barlow-condensed",
+          [(w, s) for w in (600, 700, 800) for s in ("normal", "italic")]),
+         ("Inter", "@fontsource/inter@5.0.18", "inter", [(w, "normal") for w in (400, 500, 600, 700, 800)])]
 TZ = "America/Toronto"
 
 # Anything wider than the screen that isn't inside a scrolling or clipping container (rails are fine).
@@ -67,26 +70,31 @@ OVERFLOW_JS = r"""() => {
 }"""
 
 
+def font_files():
+    return [(fam, FONTS / f"{pre}-latin-{w}-{st}.woff2", w, st) for fam, _, pre, ws in FACES for w, st in ws]
+
+
 def ensure_fonts():
-    want = [FONTS / f"barlow-condensed-latin-{w}-{s}.woff2" for w, s in WEIGHTS]
-    if all(p.exists() for p in want):
+    if all(p.exists() for _, p, _, _ in font_files()):
         return True
     FONTS.mkdir(parents=True, exist_ok=True)
-    tmp = Path(tempfile.mkdtemp())
-    try:
-        subprocess.run(["npm", "pack", "@fontsource/barlow-condensed@5.0.13", "--silent"], cwd=tmp,
-                       check=True, capture_output=True, timeout=120)
-        with tarfile.open(next(tmp.glob("*.tgz"))) as t:
-            t.extractall(tmp, filter="data")
-        for p in want:
-            src = tmp / "package" / "files" / p.name
-            if src.exists():
-                shutil.copy(src, p)
-    except Exception as e:  # no npm or no network: carry on with fallback fonts
-        print(f"! couldn't fetch Barlow Condensed ({e}); headings will use a fallback font", file=sys.stderr)
-    finally:
-        shutil.rmtree(tmp, ignore_errors=True)
-    return all(p.exists() for p in want)
+    for fam, pkg, pre, ws in FACES:
+        if all((FONTS / f"{pre}-latin-{w}-{st}.woff2").exists() for w, st in ws):
+            continue
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            subprocess.run(["npm", "pack", pkg, "--silent"], cwd=tmp, check=True, capture_output=True, timeout=120)
+            with tarfile.open(next(tmp.glob("*.tgz"))) as t:
+                t.extractall(tmp, filter="data")
+            for w, st in ws:
+                src = tmp / "package" / "files" / f"{pre}-latin-{w}-{st}.woff2"
+                if src.exists():
+                    shutil.copy(src, FONTS / src.name)
+        except Exception as e:  # no npm or no network: carry on with fallback fonts
+            print(f"! couldn't fetch {fam} ({e}); text will use a fallback font", file=sys.stderr)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    return all(p.exists() for _, p, _, _ in font_files())
 
 
 def serve_dir(page, data, live, fonts_ok):
@@ -94,10 +102,10 @@ def serve_dir(page, data, live, fonts_ok):
     html = site_document(page)  # no version stamp, so it never tries to reload itself
     if fonts_ok:
         (d / "_f").mkdir()
-        for w, s in WEIGHTS:
-            shutil.copy(FONTS / f"barlow-condensed-latin-{w}-{s}.woff2", d / "_f")
-        ff = "".join(f'@font-face{{font-family:"Barlow Condensed";font-weight:{w};font-style:{s};'
-                     f'src:url(_f/barlow-condensed-latin-{w}-{s}.woff2)}}' for w, s in WEIGHTS)
+        ff = ""
+        for fam, path, w, st in font_files():
+            shutil.copy(path, d / "_f")
+            ff += f'@font-face{{font-family:"{fam}";font-weight:{w};font-style:{st};src:url(_f/{path.name})}}'
         html = html.replace("<style>", "<style>" + ff, 1)
     (d / "test.html").write_text(html, encoding="utf-8")
     for item in data.iterdir():

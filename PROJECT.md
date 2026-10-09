@@ -29,7 +29,7 @@ Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselec
    - republishes the artifact, then pushes `results.json` to this repo as "Morning data YYYY-MM-DD", which redeploys the site;
    - messages the owner on Mondays, and on other days only when something needs his attention.
 2. **Game nights.** The GitHub workflow refreshes the site's `live.json`; the Claude live task refreshes the artifact's.
-3. **In the app.** `results.json` and `live.json` are fetched once when the page loads. Live points are layered on top (`applyLive`) only when `live.json` is dated today (or yesterday before 6 AM) and is newer than `results.asof`, so last night's games are never counted twice. Live points flow into everything that shows them: the Tonight header, team totals and standings, player totals and the standings chart.
+3. **In the app.** `results.json` and `live.json` are fetched when the page loads, and an open app keeps itself current (`freshen()`): it checks again whenever it comes back into view, `results.json` every 10 minutes and, on game nights (or while games are live), `live.json` every 2 minutes. Changes are applied in place (`quietRender()`): no reload, scroll positions kept, entrance animations not replayed, an open game sheet updated where it is, and when a new morning's data arrives the overnight summary shows as if the app had just been opened. Live points are layered on top (`applyLive`) only when `live.json` is dated today (or yesterday before 6 AM) and is newer than `results.asof`, so last night's games are never counted twice. Live points flow into everything that shows them: the Tonight header, team totals and standings, player totals and the standings chart.
 
 `asof` is the date of the last games included (yesterday), not the date the refresh ran. The Pool Pulse header shows the morning after `asof`.
 
@@ -52,7 +52,8 @@ Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselec
 
 - **Tabs** (`TABS` / `RENDER`): Today, Race, My team, League, Recap. Bottom tab bar on phones, top bar on desktop.
 - **Today, top to bottom (the order is fixed on purpose):** ticker, hero, Tonight (rooting guide), Pool Pulse, Watch list, Hot and cold, Record book, footer row.
-- **Useful functions:** `today()`, `race()`, `mine()`, `league()`, `recap()`, `heroLine()`, `pulseHTML()`, `tickerHTML()`, `hotCold()`, `recordBook()`, `gameSheet()`, `howSheet()`, `drawStand()`, `applyLive()`, `liveOn()`, `liveNew()`, `pickTeam()`, `onboard()`, `setTeam()`, `SH(kicker, title, meta)` (section heading).
+- **Useful functions:** `today()`, `race()`, `mine()`, `league()`, `recap()`, `heroLine()`, `pulseHTML()`, `tickerHTML()`, `hotCold()`, `recordBook()`, `gameSheet()`, `howSheet()`, `drawStand()`, `applyLive()`, `liveOn()`, `liveNew()`, `freshen()`, `quietRender()`, `pickTeam()`, `onboard()`, `setTeam()`, `SH(kicker, title, meta)` (section heading).
+- **Re-rendering after a data change:** use `quietRender()`, not `rerender()`. It adds a `quiet` class that switches off entrance animations (`.rise`, banner sway, Hot and cold reveals, chart draws), so updates don't make the page jump. A normal tab switch (`setTab`) removes it, so tabs still animate in. New entrance effects need a matching `.quiet` rule.
 - **Saved settings** (localStorage):
   - JSON-encoded through the `store` helper: `pool.me` (your team), `pool.stars` (rivals), `pool.tab`, `pool.onboarded`, `pool.ovn.<team>` and `pool.seen.<team>` (overnight summary and move celebrations already shown), and view choices (`pool.raceView`, `pool.leagueView`, `pool.rosterSort`, `pool.recapWeek`, `pool.lens`, `pool.h2h`, `pool.obAll`, `pool.seenRows`, `pool.wiPlayer`).
   - Plain strings: `pool.theme` (`light` or `dark`; unset means follow the device) and `pool.splash` (the UTC date the intro last played).
@@ -82,7 +83,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 - **Team colour.** `--me` keeps only the team's hue (`BRANDH`) at a fixed saturation and lightness, so it's a legible version of the team colour, not the exact hex.
 - **Escape everything** that goes into HTML with `esc()`, including numbers like "<1%".
 - **Shadowed names.** `drawStand()` has a local `L` (a margin) that hides the global live data `L`; use `liveNew()` / `liveDate()` there.
-- **Fonts in sandboxes.** Google Fonts is usually blocked, so local screenshots need Barlow Condensed from npm (`tools/preview.py` fetches it into `tools/.fonts`).
+- **Fonts in sandboxes.** Google Fonts is usually blocked, so local screenshots need the real fonts from npm: `tools/preview.py` fetches Barlow Condensed and Inter into `tools/.fonts`. Measure fit with them loaded; fallback fonts have different widths.
 - **This repo is public.** Never commit the private inputs file, the pipeline scripts, the artifact's links or anything from the private notes. `.gitignore` blocks the obvious file names as a safety net.
 
 ## Open items (as of Oct 9, 2026)
@@ -90,9 +91,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 - **Website live scores mostly aren't arriving.** Two causes:
   - GitHub has run the 10-minute schedule only once since it was added (Oct 9, 3:59 AM Toronto).
   - Settings → Pages → Source appears to still be "Deploy from a branch": every push is paired with a "pages build and deployment" run, which is GitHub's branch deploy. That second deploy has no `live.json` and can overwrite the workflow's. The owner needs to switch Source to "GitHub Actions"; Claude can't reach that setting (the Pages API returns 403).
-- **An open app never refreshes its data.** `results.json` and `live.json` are fetched once per page load, and the site's version check only reloads when the app itself changes. So a home-screen app left open overnight shows yesterday's numbers, and during games new points only appear after a manual refresh. Related: How the odds work and the game sheet both say live scores update "about once an hour", which is only true of the artifact.
-- **Footer cut off on phones.** At 390 px the footer row (date, Verified, info, App tour, How the odds work) is too wide since App tour was added, so "How the odds work" is clipped. `tools/preview.py` flags it as `#howbtn2`.
-- **Pool Pulse header during games (phone).** The red LIVE tag overlaps the PPG sponsor logo.
+- **Live-score wording.** How the odds work and the game sheet both say live scores update "about once an hour". That's true of the artifact, but the website's cadence depends on GitHub (see above).
 - **Hero meta line.** It reads "49 back of 1st" without "points", and during games it wraps on phone with a stray leading "·".
 - **Pulse stat labels.** Streak, slump and record cards have no default label, so "Pool" shows above their stat.
 - **Copy that breaks the house style.** The Recap tab still shows recap text that mentions "the model" (new recaps avoid it from Mon Oct 12, but the archived week keeps it), and its team lines say "Strength from here: Nth of 16", which is jargon.
