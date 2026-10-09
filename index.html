@@ -1442,17 +1442,26 @@ function heroLine(t){
     if(!me1&&wLeadName!==t.name&&wGap-gapNow>=5)return `You've cut the gap to <em>${gapNow}</em>. It was ${wGap} a week ago.`;
     if(t.rank_proj-w.rank>=2)return `Projected <em>${ord(t.rank_proj)}</em> now, down from ${ord(w.rank)}. ${pts(gapNow)} back with ${left} games to go.`;
     if(!me1&&wLeadName===lead.name&&gapNow-wGap>=5)return `${esc(lead.name)} has stretched it to <em>${gapNow}</em>, from ${wGap} last week. Plenty of hockey left.`;
-    const dw=Math.round((t.win-w.win)*100);if(Math.abs(dw)>=3)return `Your title odds ${dw>0?"climbed":"slipped"} to <em>${pct(t.win)}</em> this week, from ${pct(w.win)}.`;
+    const dw=Math.round((t.win-w.win)*100);if(Math.abs(dw)>=3)return `Your title odds ${dw>0?"climbed":"slipped"} to <em>${esc(pct(t.win))}</em> this week, from ${esc(pct(w.win))}.`;
   }
-  if(phase==="late"){const rl=real(),top=rl[0],rr=realRank(t);
-    if(top.name===t.name){const g=t.banked-rl[1].banked;return `You're <em>on top</em>, ${pts(g)} clear with ${left} games left.`}
-    const g=top.banked-t.banked,per=left?(g/left):0;
-    return `${pts(g)} back of 1st with <em>${left} games left</em>. You need about ${per.toFixed(1)} more points a night than ${esc(top.name)}.`}
-  if(phase==="mid"){const rr=realRank(t);
-    if(me1)return `${ord(rr)} today, and projected to <em>win the pool</em> by ${pts(gapNow)}.`;
-    return `You're ${ord(rr)} today and projected <em>${ord(t.rank_proj)}</em>, ${pts(gapNow)} back of ${esc(lead.name)}.`}
-  if(me1)return `You're projected to <em>win the pool</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} clear of ${esc(sec.name)}.`;
-  return `You're projected to finish <em>${ord(t.rank_proj)}</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} back of ${esc(lead.name)}.`}
+  // quiet day: rotate through true angles, one per day (same for everyone, steady all day)
+  const A=[],rr=realRank(t),byW=[...R.teams].sort((x,y)=>y.win-x.win),wRank=byW.findIndex(x=>x.name===t.name)+1;
+  const below=byP[t.rank_proj]||null,ros=[...R.teams].sort((x,y)=>y.ros-x.ros).findIndex(x=>x.name===t.name)+1;
+  if(phase==="late"){const rl=real(),top=rl[0];
+    if(top.name===t.name){const g=t.banked-rl[1].banked;A.push(`You're <em>on top</em>, ${pts(g)} clear with ${left} games left.`);A.push(`${esc(rl[1].name)} is ${pts(g)} behind you with <em>${left} games</em> to play.`)}
+    else{const g=top.banked-t.banked,per=left?(g/left):0;A.push(`${pts(g)} back of 1st with <em>${left} games left</em>. You need about ${per.toFixed(1)} more points a night than ${esc(top.name)}.`);
+      A.push(`You're <em>${ord(rr)}</em> with ${left} games to go, ${pts(g)} behind ${esc(top.name)}.`)}
+    if(t.win>=0.05)A.push(`You've got a <em>${esc(pct(t.win))}</em> shot at the title with ${left} games left.`)}
+  else{
+    if(phase==="mid")A.push(me1?`${ord(rr)} today, and projected to <em>win the pool</em> by ${pts(gapNow)}.`:`You're ${ord(rr)} today and projected <em>${ord(t.rank_proj)}</em>, ${pts(gapNow)} back of ${esc(lead.name)}.`);
+    else A.push(me1?`You're projected to <em>win the pool</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} clear of ${esc(sec.name)}.`:`You're projected to finish <em>${ord(t.rank_proj)}</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} back of ${esc(lead.name)}.`);
+    if(wRank<=6)A.push(wRank===1?`Nobody has better title odds than you: <em>${esc(pct(t.win))}</em>.`:`You've got a <em>${esc(pct(t.win))}</em> shot at the title, ${ord(wRank)} best in the pool.`);
+    if(below){const g=Math.round(t.sim-below.sim);A.push(g<=10?`${esc(below.name)} is right behind you, <em>${pts(g)}</em> back in the projections.`:`You've got a <em>${g}-point</em> cushion on ${esc(below.name)} in the projections.`)}
+    if(Math.abs(rr-t.rank_proj)>=3)A.push(rr>t.rank_proj?`${ord(rr)} today, but projected <em>${ord(t.rank_proj)}</em>. ${phase==="early"?"The early standings won't last.":"The best is still ahead."}`:`${ord(rr)} today, projected <em>${ord(t.rank_proj)}</em>. You've banked a head start.`);
+    if(ros<=5)A.push(ros===1?`Your roster has the <em>most points left to score</em> of any team.`:`Your roster has the <em>${ord(ros)}-most</em> points left to score in the pool.`);
+  }
+  const day=Math.round(new Date(R.asof+"T12:00:00").getTime()/864e5);
+  return A[((day%A.length)+A.length)%A.length]}
 function today(){
   const t=meT(), lead=R.teams[0], pd=prevDay(), [cA,cB]=confidence(), stale=staleTeams();
   const mine=t.players;
