@@ -865,6 +865,7 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.top .brand{cursor:pointer;-webkit-tap-highlight-color:transparent}.top .brand:active{opacity:.75}
 .seg-sm button{padding:5px 10px;font-size:12px}
 .ob{position:fixed;inset:0;z-index:210;background:var(--bg);overflow:hidden;transition:opacity .3s,transform .3s;animation:obIn .35s ease}
 @keyframes obIn{from{opacity:0}}
@@ -1105,7 +1106,7 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 <script>(function(){var el=document.getElementById("splash"),k="pool.splash",d=new Date().toISOString().slice(0,10),show=true;try{show=localStorage.getItem(k)!==d;localStorage.setItem(k,d)}catch(e){}if(!show){el.remove();return}var t0=Date.now(),gone=false;function bye(){if(gone)return;gone=true;el.classList.add("bye");setTimeout(function(){el.remove()},600)}window.__splashDone=function(){var w=Math.max(0,2500-(Date.now()-t0));setTimeout(bye,w)};el.addEventListener("click",bye);setTimeout(bye,6000)})();</script>
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <div class="brand" role="link" tabindex="0" aria-label="PPGPool27, go to Today" title="Today">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><line x1="13" y1="4" x2="13" y2="22" stroke="#C8007E" stroke-width="2.8"/><line x1="8.5" y1="4" x2="8.5" y2="22" stroke="#00A0E3" stroke-width="2.4"/><line x1="17.5" y1="4" x2="17.5" y2="22" stroke="#FFD600" stroke-width="2.4"/><rect x="1" y="4" width="24" height="18" rx="9" fill="none" stroke="var(--fg)" stroke-width="2"/><circle cx="13" cy="13" r="2.4" fill="var(--fg)"/></svg>
       <b class="wm" aria-label="PPGPool27"><span class="ppg">PPG</span><span class="pool">Pool</span><span class="yr">&rsquo;27</span></b>
     </div>
@@ -1814,6 +1815,7 @@ function animateBars(root){requestAnimationFrame(()=>root.querySelectorAll(".bar
 function setTab(id,scroll){$$(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===id));TABS.forEach(t=>$("#"+t).hidden=t!==id);RENDER[id]();animateBars($("#"+id));unitize($("#"+id),true);movePill();if(scroll!==false)window.scrollTo({top:0});store.set("pool.tab",id)}
 function rerender(){const cur=store.get("pool.tab","today");RENDER[cur]();animateBars($("#"+cur));unitize($("#"+cur),false)}
 $$(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+{const br=document.querySelector(".top .brand");const goT=()=>{if(R){setTab("today",false);window.scrollTo({top:0,behavior:"smooth"})}};br?.addEventListener("click",goT);br?.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goT()}})}
 document.getElementById("tourbtn")?.addEventListener("click",()=>{if(R)onboard()});
 document.querySelector(".mepick")?.addEventListener("click",()=>{if(R)pickTeam(false)});
 document.querySelector(".mepick")?.setAttribute("role","button");
