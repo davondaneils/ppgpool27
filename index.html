@@ -864,6 +864,8 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.sot .sot-dash{fill:none;stroke:var(--c);stroke-width:2;stroke-dasharray:4 4;opacity:.9}
+.sot text.sot-lv{fill:var(--red);font-weight:700}
 .lvp{font-style:normal;color:var(--red);font-weight:700;white-space:nowrap}
 .lvr{display:block;font-size:var(--t-mic);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
 .tng-on{display:flex;align-items:center;gap:8px;text-align:left;line-height:1.15}
@@ -1179,6 +1181,8 @@ function liveOn(){if(!L||!L.games||!L.games.length)return false;const td=todayIS
 function liveTally(){const idx={};P.forEach(p=>{const parts=p.name.split(" "),k1=nkey(parts[0][0]+". "+parts.slice(1).join(" "))+"|"+p.nhl;(idx[k1]=idx[k1]||[]).push(p);idx[nkey(p.name)+"|"+p.nhl]=[p]});
   const T={};(L&&L.games||[]).forEach(gm=>(gm.goals||[]).forEach(go=>{const tm=NHLMAP[go.team]||go.team;const add=(n,f)=>{const c=idx[nkey(n)+"|"+tm];if(c&&c.length===1){const k=c[0].team+"|"+c[0].name;(T[k]=T[k]||{g:0,a:0})[f]++}};add(go.scorer,"g");(go.assists||[]).forEach(a=>add(a,"a"))}));return T}
 function liveTag(lg){const per=lg&&lg.period?("P"+lg.period+(lg.clock?" "+esc(lg.clock):"")).replace(/^P4/,"OT").replace(/^P5/,"SO"):"";return `<span class="live"><b>Live</b>${per?`<em>${per}</em>`:""}</span>`}
+function liveNew(){return liveOn()&&L.date>R.asof}
+function liveDate(){return L&&L.date}
 function liveGame(a,h){if(!liveOn())return null;return L.games.find(g=>(NHLMAP[g.away]||g.away)===a&&(NHLMAP[g.home]||g.home)===h)||null}
 function fmtClock(iso){try{return new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}catch(e){return ""}}
 
@@ -1419,16 +1423,16 @@ function lineChart(el,series,opts){
 const seriesFor=fn=>(R.daily||[]).map(d=>[d.asof,fn(d)]);
 let sotFocus=null;
 function drawStand(){
-  const el=$("#sotChart");if(!el)return;const D=R.daily||[];if(!D.length){el.innerHTML='<p class="empty">No history yet.</p>';return}
+  const el=$("#sotChart");if(!el)return;const LV=liveNew();const D=(R.daily||[]).concat(LV?[{asof:liveDate(),live:1,teams:Object.fromEntries(R.teams.map(t=>[t.name,{rank_now:realRank(t)}]))}]:[]);if(!D.length){el.innerHTML='<p class="empty">No history yet.</p>';return}
   const W=Math.max(300,Math.min(1080,el.clientWidth||900)),H=340,L=30,Rt=40,Tp=12,B=26,n=D.length,sz=18;
   const names=R.teams.map(t=>t.name).sort((a,b)=>(a===ME)-(b===ME));
   const x=i=>n===1?(L+W-Rt)/2:L+(W-L-Rt)*i/(n-1), y=r=>Tp+(H-Tp-B)*(r-1)/15;
   let g="";[1,4,8,12,16].forEach(r=>{g+=`<line class="grid-l" x1="${L}" x2="${W-Rt}" y1="${y(r)}" y2="${y(r)}"/><text x="${L-8}" y="${y(r)+4}" text-anchor="end">${r===1?"1st":r}</text>`});
-  const step=Math.max(1,Math.ceil(n/6));D.forEach((d,i)=>{if(i%step===0||i===n-1)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${n>1&&i===0?"start":n>1&&i===n-1?"end":"middle"}">${fmtDate(d.asof)}</text>`});
+  const step=Math.max(1,Math.ceil(n/6));D.forEach((d,i)=>{if(i%step===0||i===n-1)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="${n>1&&i===0?"start":n>1&&i===n-1?"end":"middle"}" ${d.live?'class="sot-lv"':""}>${d.live?"Tonight · live":fmtDate(d.asof)}</text>`});
   const lines=[],ends=[];
   names.forEach(nm=>{const c=BRANDC[nm]||"var(--ring)";const pts=D.map((d,i)=>{const q=d.teams[nm];return q?[x(i),y(q.rank_now)]:null}).filter(Boolean);if(!pts.length)return;
     const e=pts[pts.length-1];
-    lines.push(`<g class="sl${nm===ME?" me":""}" data-st="${esc(nm)}" style="--c:${c}">${pts.length>1?`<polyline class="draw" pathLength="1" style="animation-delay:${lines.length*35}ms" points="${pts.map(p=>p.join(",")).join(" ")}"/>`:""}${nm===ME?`<circle class="pulse" cx="${e[0]}" cy="${e[1]}" r="5" style="fill:var(--c)"/>`:""}<circle cx="${e[0]}" cy="${e[1]}" r="3.5"/><title>${esc(nm)}</title></g>`);
+    lines.push(`<g class="sl${nm===ME?" me":""}" data-st="${esc(nm)}" style="--c:${c}">${(()=>{const sol=LV?pts.slice(0,-1):pts;return (sol.length>1?`<polyline class="draw" pathLength="1" style="animation-delay:${lines.length*35}ms" points="${sol.map(p=>p.join(",")).join(" ")}"/>`:"")+(LV&&pts.length>1?`<polyline class="sot-dash" points="${pts.slice(-2).map(p=>p.join(",")).join(" ")}"/>`:"")})()}${nm===ME?`<circle class="pulse" cx="${e[0]}" cy="${e[1]}" r="5" style="fill:var(--c)"/>`:""}<circle cx="${e[0]}" cy="${e[1]}" r="3.5"/><title>${esc(nm)}</title></g>`);
     ends.push({nm,y:e[1]})});
   ends.sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<sz+1)ends[i].y=ends[i-1].y+sz+1;
   const shift=Math.max(0,(ends.length?ends[ends.length-1].y:0)-(H-B));if(shift)ends.forEach(e=>e.y-=shift);
@@ -1436,7 +1440,7 @@ function drawStand(){
   el.innerHTML=`<svg class="sot" viewBox="0 0 ${W} ${H}" width="100%" style="display:block" role="img" aria-label="Real standings place by day for every team">${g}${lines.join("")}${logos}</svg><p class="small" id="sotNote" style="margin-top:6px"></p>`;
   const svg=el.querySelector("svg"),note=$("#sotNote");
   const apply=()=>{svg.classList.toggle("focus",!!sotFocus);svg.querySelectorAll("[data-st]").forEach(n=>n.classList.toggle("on",n.dataset.st===sotFocus));
-    const t=sotFocus&&R.teams.find(x=>x.name===sotFocus);note.textContent=t?`${t.name}: ${ord(realRank(t))} now, projected ${ord(t.rank_proj)}. Tap again to show everyone.`:(n<5?`${n} day${n>1?"s":""} of history so far. A new point is added every morning.`:"")};
+    const t=sotFocus&&R.teams.find(x=>x.name===sotFocus);note.textContent=t?`${t.name}: ${ord(realRank(t))} now, projected ${ord(t.rank_proj)}. Tap again to show everyone.`:(LV?"The dashed line is tonight, live. It becomes a solid point when the final totals lock in the morning.":n<5?`${n} day${n>1?"s":""} of history so far. A new point is added every morning.`:"")};
   svg.querySelectorAll("[data-st]").forEach(n=>{n.style.cursor="pointer";n.onclick=()=>{sotFocus=sotFocus===n.dataset.st?null:n.dataset.st;apply()}});
   apply();
 }
