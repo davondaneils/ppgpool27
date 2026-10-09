@@ -498,7 +498,9 @@ ul.lens li::marker{color:var(--me)}
 .statgrid div{background:var(--card-2);border:1px solid var(--border);box-shadow:var(--inset);border-radius:var(--r-sm);padding:10px}
 .statgrid b{display:block;font-family:var(--display);font-size:30px;font-weight:800;line-height:1}
 .statgrid>div>span{font-size:var(--fs-xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.sheet h4{margin:18px 0 8px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sheet h4{margin:22px 0 8px;font-size:var(--t-lab);font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sx-k{display:block;font-size:var(--t-lab);font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--me);margin-bottom:6px}
+.sx-t{font-family:var(--display);font-weight:800;font-size:var(--d2);line-height:.9;text-transform:uppercase;letter-spacing:.005em;margin:0;text-wrap:balance}
 .kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;font-size:13.5px}
 .kv>span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
 
@@ -1207,7 +1209,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791569591";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791570988";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1342,9 +1344,12 @@ function staleTeams(){if(R.check&&Array.isArray(R.check.skipped)&&R.check.date==
 function todayISO(){return new Date().toLocaleDateString("en-CA")}
 
 /* ---------- what-if engine (uses simulation samples) ---------- */
-function winWith(shifts){const S=R.samples;if(!S)return meT().win;const idx=S.teams.indexOf(ME);let w=0;
+function winRaw(shifts){const S=R.samples,idx=S.teams.indexOf(ME);let w=0;
   for(const row of S.rows){const mv=row[idx]+(shifts[ME]||0);let best=-1e9;for(let i=0;i<row.length;i++){if(i===idx)continue;const v=row[i]+(shifts[S.teams[i]]||0);if(v>best)best=v}if(mv>best)w++}
   return w/S.rows.length}
+/* the samples are a subset of the full simulation, so scale them to the published win odds: no change reads exactly as meT().win */
+function winWith(shifts){const S=R.samples,base=meT().win;if(!S||S.teams.indexOf(ME)<0)return base;const r0=winRaw({}),r=winRaw(shifts);
+  return Math.min(1,Math.max(0,r0>0?base*r/r0:base+r-r0))}
 function lossIfOut(p,games){const left=Math.max(1,R.season_games-((R.team_gp||{})[p.nhl]||0));return -p.ros*Math.min(1,games/left)}
 
 /* ---------- rink ---------- */
@@ -1928,7 +1933,7 @@ function playerSheet(key){
   const strip=L.length?`<table class="glog2"><thead><tr><th class="l">Game</th><th>G</th><th>A</th><th>PTS</th></tr></thead><tbody>${[...L].reverse().slice(0,5).map(e=>{const dnp=e[3]==null,v=dnp?0:e[3]+e[4];return `<tr class="${dnp?"dnp":""}"><td class="l"><span class="gopp"><em>${e[2]?"vs":"at"}</em>${tlogo(e[1],20)}<span>${e[1]}</span><span class="small">${fmtDate(e[0])}</span></span></td>${dnp?`<td colspan="3" class="small">Did not play</td>`:`<td>${e[3]}</td><td>${e[4]}</td><td><b class="${v?"hit":""}">${v}</b></td>`}</tr>`}).join("")}</tbody></table>`:`<p class="empty">No games logged yet.</p>`;
   const dvv=p.draft_value!=null?Math.round(p.draft_value):null;const dv=dvv==null?"":Math.abs(dvv)<3?`Drafted in round ${p.round}, and projected right around what an average round-${p.round} pick scores.`:`Drafted in round ${p.round}. Projected to score ${Math.abs(dvv)} points ${dvv>0?"more":"fewer"} than an average round-${p.round} pick.`;
   const blend=p.my_full!=null&&p.ext_full!=null?`Averages his recent scoring pace (${p.my_full} over a full season) with NHL.com's projection (${p.ext_full})${mult?`, ${mult>0?"up":"down"} ${Math.abs(mult)}% for his current role`:", with no change for his role"}.`:"";
-  openSheet(`<div class="who" style="padding-right:44px">${av(p,"lg")}<div><div id="sheet-title" style="font-size:19px;font-weight:700">${esc(p.name)}</div><div class="small">${esc(TEAMN[p.nhl]||"No NHL team")} · ${p.pos==="D"?"Defence":"Forward"} · ${mineP?"Your player":esc(p.team)}</div></div></div>
+  openSheet(`<div class="who" style="padding-right:44px">${av(p,"lg")}<div><div id="sheet-title" class="sx-t">${esc(p.name)}</div><div class="small">${esc(TEAMN[p.nhl]||"No NHL team")} · ${p.pos==="D"?"Defence":"Forward"} · ${mineP?"Your player":esc(p.team)}</div></div></div>
    ${chips(p,8,!!statusBox(p))}
    ${statusBox(p)}
    <div class="pline"><div class="pv"><b>${p.pts}</b><i>/${Math.round(p.final)}</i></div><div class="pm"><span>Points / projected</span><div class="pbar"><i style="width:${Math.min(100,p.pts/Math.max(1,p.final)*100).toFixed(1)}%"></i></div></div><em title="Projected rank among all ${P.length} pool players">#${rank}<small>Projected</small></em></div>${dv?`<p class="small" style="margin-top:6px">${dv}</p>`:""}${p.streak>=2?`<p style="margin-top:8px"><span class="badge up">${p.streak}-game point streak</span></p>`:""}
@@ -1966,14 +1971,14 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
    ${started&&lg.goals&&lg.goals.length?`<div class="gs-sec"><h4 class="gs-h">Scoring</h4><ul class="gs-goals">${lg.goals.map(go=>`<li>${tlogo(NHLMAP[go.team]||go.team,18)}<span>${pp(go.scorer)}${go.assists&&go.assists.length?` <span class="gs-a">(${go.assists.map(pp).join(", ")})</span>`:""}</span></li>`).join("")}</ul></div>`:""}
    <div class="gs-sec"><div class="gs-key"><span><i class="fm"></i>Yours</span><span><i class="fr"></i>Threat</span><span class="gs-tip">Tap a player for details</span></div><div class="gs-sides">${sides.map(side).join("")}</div></div>
    ${started?`<p class="gs-foot">Live scores update about once an hour.</p>`:""}`);SHEETG=key}
-function rulesSheet(){openSheet(`<h3 id="sheet-title" style="font-size:18px;padding-right:44px">Pool rules</h3>
+function rulesSheet(){openSheet(`<div style="padding-right:44px"><span class="sx-k">2026–27 season</span><h3 id="sheet-title" class="sx-t">Pool rules</h3></div>
  <div class="stack" style="gap:10px;margin-top:12px;font-size:14px">
  <p><b>The teams.</b> ${R.teams.length} teams each drafted 12 skaters before the season.</p>
  <p><b>Scoring.</b> Every goal and every assist your players get is a point for your team. Only the NHL regular season counts.</p>
  <p><b>Shootouts.</b> Shootout goals don't count, because the NHL doesn't credit them as goals. Overtime goals count like any other.</p>
  <p><b>Rosters are locked.</b> No trades, pickups or swaps all season. Injured and suspended players stay on your roster and score nothing while they're out.</p>
  </div>`)}
-function howSheet(){openSheet(`<h3 id="sheet-title" style="font-size:18px;padding-right:44px">How the odds work</h3>
+function howSheet(){openSheet(`<div style="padding-right:44px"><span class="sx-k">Updated every morning</span><h3 id="sheet-title" class="sx-t">How the odds work</h3></div>
  <div class="stack" style="gap:10px;margin-top:12px;font-size:14px">
  <p><b>Starting point.</b> Each player starts from two projections weighted equally: his points per game over recent seasons, and NHL.com's published projection. NHL.com's numbers run about ${Math.round(((R.ext_scale||1)-1)*100)}% high across the pool, so they're scaled down to match.</p>
  <p><b>This season.</b> Actual production is blended in slowly, as if the projection were worth 80 games of evidence, so a hot or cold week barely moves it. Goals are replaced with shots times the player's usual shooting percentage, so lucky or unlucky shooting doesn't count.</p>
@@ -1998,7 +2003,7 @@ function overnight(){const pd=prevDay();if(!pd||!pd.teams[ME])return false;const
   const t=meT(),was=pd.teams[ME],mine=t.players,played=mine.filter(p=>p.last&&p.last.date===R.asof),pts=played.reduce((s,p)=>s+p.last.g+p.last.a,0);
   const dr=(was.rank_now||realRank(t))-realRank(t),dw=Math.round((t.win-was.win)*100),best=[...played].sort((a,b)=>(b.last.g+b.last.a)-(a.last.g+a.last.a))[0];
   const line=dr>0?`Up ${dr} place${dr>1?"s":""} to ${ord(realRank(t))}.`:dr<0?`Down ${-dr} to ${ord(realRank(t))}.`:`Holding at ${ord(realRank(t))}.`;
-  openSheet(`<div class="eyebrow" style="padding-right:44px">Overnight · ${fmtDay(R.asof)}</div><h3 id="sheet-title" style="font-family:var(--display);font-size:30px;letter-spacing:0;line-height:1;margin-top:6px">${pts?`+${pts} points last night`:"A quiet night"}</h3>
+  openSheet(`<div style="padding-right:44px"><span class="sx-k">Overnight · ${fmtDay(R.asof)}</span></div><h3 id="sheet-title" class="sx-t">${pts?`+${pts} points last night`:"A quiet night"}</h3>
    <p class="muted" style="margin-top:8px">${line} Win odds ${dw>0?"up":dw<0?"down":"steady"}${dw?` ${Math.abs(dw)} to ${pct(t.win)}`:` at ${pct(t.win)}`}.${best&&best.last.g+best.last.a?` ${esc(best.name)} led the way with ${best.last.g} G, ${best.last.a} A.`:""}</p>
    <div class="ov"><div><b>${pts}</b><span>Points</span></div><div><b>${ord(realRank(t))}</b><span>Standing</span></div><div><b>${pct(t.win)}</b><span>Win odds</span></div></div>
    <button class="btn" style="margin-top:16px;width:100%;justify-content:center" id="ovgo">Let's go</button>`);
