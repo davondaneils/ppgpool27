@@ -865,6 +865,7 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.seg-sm button{padding:5px 10px;font-size:12px}
 .ob{position:fixed;inset:0;z-index:210;background:var(--bg);overflow:hidden;transition:opacity .3s,transform .3s;animation:obIn .35s ease}
 @keyframes obIn{from{opacity:0}}
 .ob.out{opacity:0;transform:scale(1.02)}
@@ -1526,15 +1527,17 @@ function mine(){
   const t=meT(), lead=R.teams[0], gap=lead.name===t.name?t.sim-R.teams[1].sim:lead.sim-t.sim;
   const opps=R.teams.filter(x=>x.name!==ME);const h2hDefault=[...STARS][0]||(lead.name===ME?R.teams[1].name:lead.name);
   let opp=R.teams.find(x=>x.name===store.get("pool.h2h",h2hDefault)&&x.name!==ME)||R.teams.find(x=>x.name===h2hDefault);
-  const ps=[...t.players].sort((a,b)=>a.round-b.round);
+  const ps=[...t.players].sort((a,b)=>a.round-b.round);let rs=store.get("pool.rosterSort","draft");if(!RSORT.some(x=>x[0]===rs))rs="draft";
   $("#mine").innerHTML=`
   <div class="sec-h"><div class="who">${crest(t.name,"lg")}<div><h2>${esc(t.name)}</h2><p>${lead.name===t.name?`Projected to win it by ${Math.round(gap)} points.`:`Projected ${Math.round(gap)} points back of ${esc(lead.name)} for 1st.`}</p></div></div></div>
   <div class="kp card rise">${[["Projected finish",ord(t.rank_proj),`${Math.round(t.sim)} pts · likely ${t.p10}–${t.p90}`,"proj","hi"],["Win odds",pct(t.win),`Top 3: ${pct(t.top3)}`,"win",""],["Real standing",ord(realRank(t)),`${t.banked} points banked`,"",""],["Strength from here",ord(t.rank_ros),`${Math.round(t.ros)} pts to come`,"strength",""]].map(([k,v,s,tp,c])=>`<div class="kc ${c}"><div class="kk">${k}${tp?" "+q(tp):""}</div><div class="kpv">${String(v).replace(/(\d)(st|nd|rd|th|%)$/,"$1<small>$2</small>")}</div><div class="ks">${s}</div></div>`).join("")}</div>
   <div class="card rise"><div class="card-h"><h3>Head to head</h3><select id="h2h" aria-label="Opponent">${opps.map(x=>`<option ${x.name===opp.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div><div id="h2hbox"></div></div>
-  <div class="card rise"><div class="card-h"><h3>Roster</h3><span class="small">Tap a player for details</span></div><div class="tw">${ptable(ps)}</div></div>`;
+  <div class="card rise"><div class="card-h"><h3>Roster</h3><div class="seg seg-sm" role="radiogroup" aria-label="Sort roster">${RSORT.map(([k,l])=>`<button role="radio" data-rs="${k}" aria-checked="${rs===k}">${l}</button>`).join("")}</div></div><div class="tw" id="rostTw">${ptable(sortRoster(ps,rs))}</div><p class="small" style="margin-top:8px">Tap a player for details.</p></div>`;
   headToHead(opp);
   $("#h2h").onchange=e=>{store.set("pool.h2h",e.target.value);headToHead(R.teams.find(x=>x.name===e.target.value))};
 }
+const RSORT=[["draft","Draft"],["pts","Points"],["final","Proj."]];
+function sortRoster(ps,k){const a=[...ps];if(k==="pts")a.sort((x,y)=>y.pts-x.pts||(y.livePts||0)-(x.livePts||0)||y.final-x.final);else if(k==="final")a.sort((x,y)=>y.final-x.final);else a.sort((x,y)=>x.round-y.round);return a}
 function ptable(ps){
   return `<table class="ptab"><thead><tr><th class="l">Player</th><th class="opt">Rd</th><th>GP</th><th class="opt">G</th><th class="opt">A</th><th>PTS</th><th class="opt">TOI</th><th><span style="display:inline-flex;gap:4px;align-items:center">Pace ${q("pace")}</span></th><th>Final</th></tr></thead><tbody>${ps.map(p=>`<tr class="tap" data-p="${pkey(p)}">
    <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}</div>${chips(p)}</div></div></td>
@@ -1822,6 +1825,7 @@ document.addEventListener("click",e=>{
   const gm=e.target.closest("[data-g]");if(gm){gameSheet(gm.dataset.g);return}
   const go=e.target.closest("[data-go]");if(go){setTab(go.dataset.go);return}
   const rv=e.target.closest("[data-rv]");if(rv){store.set("pool.raceView",rv.dataset.rv);race();animateBars($("#race"));return}
+  const rsb=e.target.closest("[data-rs]");if(rsb){store.set("pool.rosterSort",rsb.dataset.rs);const t=meT();$("#rostTw").innerHTML=ptable(sortRoster(t.players,rsb.dataset.rs));rsb.parentElement.querySelectorAll("[data-rs]").forEach(b=>b.setAttribute("aria-checked",b===rsb));return}
   const lv=e.target.closest("[data-lv]");if(lv){store.set("pool.leagueView",lv.dataset.lv);league();return}
   const ln=e.target.closest("[data-lens]");if(ln){store.set("pool.lens",ln.dataset.lens);recap();return}
 });
