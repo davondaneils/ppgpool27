@@ -91,7 +91,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 
 - **Website live scores mostly aren't arriving.** The live watcher (above) fixes the first cause once its start times are turned on. Two causes:
   - GitHub has run the 10-minute schedule only once since it was added (Oct 9, 3:59 AM Toronto).
-  - Settings → Pages → Source appears to still be "Deploy from a branch": every push is paired with a "pages build and deployment" run, which is GitHub's branch deploy. That second deploy has no `live.json` and can overwrite the workflow's. The owner needs to switch Source to "GitHub Actions"; Claude can't reach that setting (the Pages API returns 403).
+  - Pages Source was switched to "GitHub Actions" on Oct 9, so pushes no longer trigger a second branch deploy that drops `live.json`.
 - **Live-score wording.** How the odds work and the game sheet both say live scores update "about once an hour". That's true of the artifact, but the website's cadence depends on GitHub (see above).
 - **Hero meta line.** It reads "49 back of 1st" without "points", and during games it wraps on phone with a stray leading "·".
 - **Pulse stat labels.** Streak, slump and record cards have no default label, so "Pool" shows above their stat.
