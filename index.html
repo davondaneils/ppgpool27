@@ -212,6 +212,15 @@ tr.me{background:var(--me-soft)!important}
 .pod.g1{background:#d4a72c;box-shadow:0 0 0 3px color-mix(in srgb,#d4a72c 25%,transparent)}.pod.g2{background:#a7b0ba;box-shadow:0 0 0 3px color-mix(in srgb,#a7b0ba 25%,transparent)}.pod.g3{background:#b8763e;box-shadow:0 0 0 3px color-mix(in srgb,#b8763e 25%,transparent)}
 .u{font-size:.5em;font-weight:700;color:var(--muted);margin-left:1px;letter-spacing:.02em}
 .srow .u{font-family:var(--sans);font-size:11px;font-weight:500;margin-left:3px}
+.pt-tn{display:inline-flex;align-items:center;gap:5px;margin-left:8px;vertical-align:1px;font-size:10.5px;font-weight:700;letter-spacing:.04em;line-height:18px;padding:0 7px;border-radius:999px;background:var(--card-2);border:1px solid var(--border);color:var(--fg);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pt-tn i{font-style:normal;font-weight:600;color:var(--muted)}
+.pt-tn.on{border-color:color-mix(in srgb,var(--red) 35%,var(--border))}
+.pt-tn.on i{color:var(--red)}
+.pt-tn.on i::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-right:4px;vertical-align:1px;animation:livePulse 1.6s infinite}
+@media (prefers-reduced-motion:reduce){.pt-tn.on i::before{animation:none}}
+.pt-ct{color:var(--fg);font-weight:500;white-space:nowrap}
+@media (max-width:640px){.pt-ct{display:block}}
+@media (max-width:600px){.pt-tn{display:flex;width:max-content;margin:4px 0 2px}}
 @media (max-width:600px){.ptab .opt{display:none}.ptab td,.ptab th{padding:9px 4px}.ptab td.l{min-width:0}.ptab .av{width:38px;height:38px;font-size:12px}.ptab .who{gap:8px}.ptab td:last-child,.ptab th:last-child{padding-right:0}.ptab td:first-child,.ptab th:first-child{padding-left:0}}
 
 /* Standings rows (shared desktop/phone, animated) */
@@ -1189,7 +1198,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791560752";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791561280";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1334,6 +1343,13 @@ function fmtClock(iso){try{return new Date(iso).toLocaleTimeString([], {hour:"nu
 
 /* ---------- TICKER, ODDS BOARD, HOT AND COLD, RECORD BOOK ---------- */
 function addDays(iso,n){const d=new Date(iso+"T12:00:00");d.setDate(d.getDate()+n);return d.toLocaleDateString("en-CA")}
+/* who plays tonight: an opponent tag on roster rows and a count in Race (game days only, gone once the game is final) */
+function tonightSlate(){const h=new Date().getHours(),d=h<4?addDays(todayISO(),-1):todayISO();return (R.schedule||[]).filter(g=>g.date===d)}
+function tonightOf(p){if(!p||p.lineup==="injured")return null;const g=tonightSlate().find(x=>x.away===p.nhl||x.home===p.nhl);if(!g)return null;
+  const lg=liveGame(g.away,g.home),st=lg?lg.state||"":"";if(/FINAL|OFF/.test(st))return null;
+  return {opp:g.away===p.nhl?"@"+g.home:"vs "+g.away,live:!!lg&&!/^(FUT|PRE)$/.test(st),time:(g.time||"").replace(":00 "," ")}}
+function tonightTag(p){const x=tonightOf(p);if(!x)return "";return `<span class="pt-tn${x.live?" on":""}" title="${x.live?"Playing now":"Plays tonight"}">${esc(x.opp)}<i>${x.live?"Live":esc(x.time)}</i></span>`}
+function tonightCount(t){return t.players.filter(p=>tonightOf(p)).length}
 const lastName=p=>p.name.split(" ").slice(1).join(" ")||p.name;
 function tickerHTML(alerts){const it=[],td=todayISO(),S=R.schedule||[];
   const tg=R.team_gp||{},gps=Object.values(tg),avg=gps.length?gps.reduce((a,b)=>a+b,0)/gps.length:0,SG=R.season_games||82;
@@ -1580,7 +1596,7 @@ function race(){
   const order=view==="real"?real():Ts;
   const rowsHTML=order.map(x=>`<div class="srow ${x.name===ME?"me":""}" data-team="${esc(x.name)}">
     <div class="rk">${view==="real"?realLab(x):x.rank_proj}${(view==="real"?realRank(x):x.rank_proj)<=3?`<i class="pod g${view==="real"?realRank(x):x.rank_proj}"></i>`:""}</div>
-    <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}</div></div></div>
+    <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}${(c=>c?`<span class="pt-ct"><span class="hide-sm"> · </span>${c} <span class="hide-sm">playing </span>tonight</span>`:"")(tonightCount(x))}</div></div></div>
     <div class="r"><b>${view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span>${view==="real"&&x.live?`<span class="lvp lvr">+${x.live} live</span>`:""}</div>
     <div class="r">${places(moveOf(x,view))}</div>
     <div class="r h1"><b>${pct(x.win)}</b><div class="bar ${x.name===ME?"me":""}" style="margin-top:4px"><i data-w="${(x.win/maxW*100).toFixed(1)}"></i></div></div>
@@ -1678,7 +1694,7 @@ const RSORT=[["draft","Draft"],["pts","Points"],["final","Proj."]];
 function sortRoster(ps,k){const a=[...ps];if(k==="pts")a.sort((x,y)=>y.pts-x.pts||(y.livePts||0)-(x.livePts||0)||y.final-x.final);else if(k==="final")a.sort((x,y)=>y.final-x.final);else a.sort((x,y)=>x.round-y.round);return a}
 function ptable(ps){
   return `<table class="ptab"><thead><tr><th class="l">Player</th><th class="opt">Rd</th><th>GP</th><th class="opt">G</th><th class="opt">A</th><th>PTS</th><th class="opt">TOI</th><th><span style="display:inline-flex;gap:4px;align-items:center">Pace ${q("pace")}</span></th><th>Final</th></tr></thead><tbody>${ps.map(p=>`<tr class="tap" data-p="${pkey(p)}">
-   <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}</div>${chips(p)}</div></div></td>
+   <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}${tonightTag(p)}</div>${chips(p)}</div></div></td>
    <td class="opt">${p.round}</td><td>${p.gp}</td><td class="opt">${p.g}</td><td class="opt">${p.a}</td><td><b>${p.pts}</b>${p.livePts?`<i class="lvp lvt">+${p.livePts}</i>`:""}</td><td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
 }
 const IC={bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',cross:'<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6" fill="var(--card)"/><circle cx="15.5" cy="15.5" r="1.6" fill="var(--card)"/><circle cx="12" cy="12" r="1.6" fill="var(--card)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke="var(--card)" stroke-width="2" fill="none"/>',split:'<path d="M6 3v6l6 4 6-4V3M12 13v8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>',minus:'<circle cx="12" cy="12" r="9"/><path d="M7 12h10" stroke="var(--card)" stroke-width="2.4"/>',up:'<path d="M12 4 21 18H3z"/>',check:'<path d="M4 12.5 9.5 18 20 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',down:'<path d="M12 20 3 6h18z"/>',fire:'<path d="M12 2c1 3.2-.6 5-2 6.6C8.6 10.2 7 12 7 14.6A5 5 0 0 0 12 20a5 5 0 0 0 5-5.4c0-2-1-3.6-2-4.6.1 1.6-.6 2.8-1.6 3.2.4-3.6-.6-8.4-1.4-11.2z"/>',snow:'<path d="M11 2h2v4.3l2.6-1.5 1 1.7L13 8.6v2.7l2.3-1.4 3.7-2.1 1 1.7-3.7 2.1L18.6 13l-1 1.7-2.3-1.3L13 14.8v2.6l3.6 2.1-1 1.7-2.6-1.5V22h-2v-2.3l-2.6 1.5-1-1.7 3.6-2.1v-2.6l-2.3 1.4-2.3 1.3-1-1.7 2.3-1.4L3.6 9.8l1-1.7 3.7 2.1L11 11.3V8.6L7.4 6.5l1-1.7L11 6.3z"/>'};
