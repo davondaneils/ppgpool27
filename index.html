@@ -869,7 +869,15 @@ body:has(footer .fresh-end) #foot{display:none}
 .seg-sm button{padding:5px 10px;font-size:12px}
 .ob{position:fixed;inset:0;z-index:210;background:var(--bg);overflow:hidden;transition:opacity .4s,transform .4s;animation:obIn .45s ease}
 @keyframes obIn{from{opacity:0}}
-.ob.out{opacity:0;transform:scale(1.03)}
+.ob.leaving .ob-in{opacity:0;transform:translateY(-10px) scale(.98);transition:opacity .26s ease,transform .3s ease}
+.ob.out{opacity:0;transition:opacity .6s cubic-bezier(.4,0,.2,1) .08s;pointer-events:none}
+html.app-enter .top{animation:appTop .6s 0s cubic-bezier(.2,.8,.2,1) both}
+html.app-enter #today{animation:appIn .8s .05s cubic-bezier(.2,.8,.2,1) both}
+html.app-enter .tabs,html.app-enter nav.tabs{animation:appUp .6s .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes appTop{from{opacity:0;transform:translateY(-8px)}}
+@keyframes appIn{from{opacity:0;transform:translateY(18px) scale(.985)}}
+@keyframes appUp{from{opacity:0;transform:translateY(12px)}}
+@media (prefers-reduced-motion:reduce){html.app-enter .top,html.app-enter #today,html.app-enter nav{animation:none}}
 .ob-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .ob-bg::before{content:"";position:absolute;left:50%;top:-30%;width:140vmax;height:90vmax;margin-left:-70vmax;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--me) 16%,transparent),transparent 70%);transition:transform .8s cubic-bezier(.2,.8,.2,1),opacity .6s}
 .ob[data-step="1"] .ob-bg::before{transform:translateX(-18%) scale(.9)}.ob[data-step="2"] .ob-bg::before{transform:translateX(18%) scale(1.05)}.ob[data-step="3"] .ob-bg::before{transform:translateY(-8%) scale(.8);opacity:.6}.ob[data-step="4"] .ob-bg::before{transform:translateY(10%)}
@@ -1853,7 +1861,10 @@ function onboard(){const t=meT();const el=document.createElement("div");el.class
   const secs=el.querySelectorAll(".ob-s"),bars=el.querySelectorAll(".ob-prog i"),nx=el.querySelector(".ob-next"),bk=el.querySelector(".ob-back");let i=0;
   const label=j=>j===S.length-1?"Drop the puck":S[j].rv?(STARS.size?"Next":"Skip for now"):j===0?"Let's see it":"Next";
   const go=j=>{if(j<0||j>=S.length)return;secs.forEach((s,k)=>{s.classList.toggle("on",k===j);s.classList.toggle("prev",k<j);s.setAttribute("aria-hidden",k!==j)});bars.forEach((d,k)=>{d.classList.toggle("on",k===j);d.classList.toggle("done",k<j)});i=j;nx.textContent=label(j);bk.hidden=j===0;el.querySelector(".ob-skip").style.visibility=j===S.length-1?"hidden":"";el.dataset.step=j};
-  const done=()=>{store.set("pool.onboarded",true);el.classList.add("out");document.documentElement.classList.remove("picking");setTimeout(()=>el.remove(),450);rerender();toast(`Welcome to the pool, ${ME}`)};
+  const done=()=>{if(el.dataset.leaving)return;el.dataset.leaving=1;store.set("pool.onboarded",true);const H=document.documentElement;
+    try{setTab("today",false)}catch(e){rerender()}window.scrollTo(0,0);el.classList.add("leaving");
+    requestAnimationFrame(()=>{H.classList.remove("picking");H.classList.add("app-enter");el.classList.add("out")});
+    setTimeout(()=>el.remove(),900);setTimeout(()=>H.classList.remove("app-enter"),1500);setTimeout(()=>toast(`Welcome to the pool, ${ME}`),1100)};
   nx.onclick=()=>i===S.length-1?done():go(i+1);bk.onclick=()=>go(i-1);el.querySelector(".ob-skip").onclick=done;
   el.addEventListener("click",e=>{const b=e.target.closest("[data-riv]");if(b){const n=b.dataset.riv;if(STARS.has(n))STARS.delete(n);else{if(STARS.size>=3){toast("Three rivals max. Tap one to swap it out.");return}STARS.add(n)}store.set("pool.stars",[...STARS]);b.setAttribute("aria-pressed",STARS.has(n));nx.textContent=label(i)}
     if(e.target.closest("#obInstall")&&BIP){BIP.prompt();BIP.userChoice.finally(()=>{BIP=null;done()})}});
@@ -1915,7 +1926,7 @@ fetch("results.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP
   else if(qp.has("tour")&&!first)setTimeout(onboard,0);
   if(window.__splashDone)window.__splashDone();
   setTab(start,false);if(first){pickTeam();}else celebrate();if(document.fonts)document.fonts.ready.then(movePill);
-  if(!first)setTimeout(()=>{if($("#sheet").hidden)overnight()},700);
+  if(!first)setTimeout(()=>{if($("#sheet").hidden&&!document.querySelector(".ob,.pick"))overnight()},700);
   fetch("live.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.games){L=j;applyLive();if(liveOn()){if(!$("#today").hidden){today();unitize($("#today"),false)}else rerender()}}}).catch(()=>{});
 }).catch(e=>{$("#today").innerHTML=`<div class="card"><p class="err">Couldn't load the pool data (${esc(e.message)}). Refresh the page to try again.</p></div>`;console.error(e)});
 </script>
