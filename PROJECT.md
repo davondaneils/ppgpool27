@@ -96,7 +96,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 - **Live-score wording.** How the odds work and the game sheet both say live scores update "about once an hour". That's true of the artifact, but the website's cadence depends on GitHub (see above).
 - **Hero meta line.** It reads "49 back of 1st" without "points", and during games it wraps on phone with a stray leading "·".
 - **Pulse stat labels.** Streak, slump and record cards have no default label, so "Pool" shows above their stat.
-- **Copy that breaks the house style.** The Recap tab still shows recap text that mentions "the model" (new recaps avoid it from Mon Oct 12, but the archived week keeps it), and its team lines say "Strength from here: Nth of 16", which is jargon.
+- **Copy that breaks the house style.** The Recap tab's automatic team lines say "Strength from here: Nth of 16", which is jargon.
 - **The intro splash is once per UTC day,** so in Toronto it resets at 8 PM instead of greeting the first open of the morning.
 - **Morning push.** The Oct 9 refresh was started by hand after the schedule moved to 4:52, and its push to GitHub didn't land (it was pushed manually). Oct 10 is the first real scheduled test; a check is set for 5:20 AM.
 - **Similar team colours.** Because `--me` uses only the hue, several teams look alike: Lord of the Rinks and 97 Problems; This Is the Year, Tage Against the Machine and Chugalugs91; Just Here for the Poker, Poppy's Picks and Anthony Scavuzzo; Dom Scavuzzo and Debits & Checks; PhilCap and Peter Will Probably Pick Old Guys. The "bad news" colour (`--bad` #c2410c) is also close to Lord of the Rinks' own colour.
