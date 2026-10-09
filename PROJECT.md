@@ -17,6 +17,7 @@ PPGPool27 is a companion app for a 16-team NHL points pool (12 skaters per team;
 | Morning refresh | Claude scheduled task "Pool Odds daily refresh", 4:52 AM Toronto, daily | Takes about 8 to 10 minutes, so new data lands around 5 AM. Its prompt holds the full step list |
 | Live scores (artifact) | Claude scheduled task "Pool Odds live scores", at :05 past 4, 6, 8, 9, 10 and 11 PM and midnight, Toronto | Writes `live.json` to the artifact only |
 | Live scores (website) | `.github/workflows/site.yml` + `scripts/live.py` | Asks for every 10 minutes on game nights; fetches NHL.com scores into `live.json` and redeploys only when something changed. See Open items: GitHub rarely runs it on time |
+| Live watcher (website) | `.github/workflows/live.yml` + `scripts/live_watch.py` | Stays up through a game night, checks NHL.com every 2 minutes and starts the Site workflow after every change (and every 8 minutes for the clock while games are live). Manual start only until its evening start times are approved; `kick` just redeploys once |
 
 Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselects a team on someone's first visit. The slug is the team name lowercased, `&` turned into `and`, and every other run of non-alphanumeric characters turned into `-` (for example `lord-of-the-rinks`, `debits-and-checks`, `matthew-s-team`). `?tour` replays the onboarding.
 
@@ -88,7 +89,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 
 ## Open items (as of Oct 9, 2026)
 
-- **Website live scores mostly aren't arriving.** Two causes:
+- **Website live scores mostly aren't arriving.** The live watcher (above) fixes the first cause once its start times are turned on. Two causes:
   - GitHub has run the 10-minute schedule only once since it was added (Oct 9, 3:59 AM Toronto).
   - Settings → Pages → Source appears to still be "Deploy from a branch": every push is paired with a "pages build and deployment" run, which is GitHub's branch deploy. That second deploy has no `live.json` and can overwrite the workflow's. The owner needs to switch Source to "GitHub Actions"; Claude can't reach that setting (the Pages API returns 403).
 - **Live-score wording.** How the odds work and the game sheet both say live scores update "about once an hour". That's true of the artifact, but the website's cadence depends on GitHub (see above).
