@@ -1,0 +1,12 @@
+# local-only files
+tools/.fonts/
+preview-shots/
+__pycache__/
+
+# working files that belong on the artifact, not here
+pool_data.json
+data/
+prep.txt
+model.txt
+check.txt
+pulse.txt

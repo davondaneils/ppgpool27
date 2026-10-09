@@ -4,4 +4,6 @@ Companion app for the PPG NHL pool: standings, odds, the Pool Pulse and tonight'
 
 Live at https://davondaneils.github.io/ppgpool27/
 
-`results.json` (and `live.json` on game nights) are refreshed automatically each morning.
+`results.json` is refreshed automatically each morning, and live scores during games (current status in PROJECT.md).
+
+Working on the app? Start with [PROJECT.md](PROJECT.md).
