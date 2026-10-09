@@ -1167,7 +1167,7 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 @media (max-width:560px){.sp-mark{width:48px;height:48px}.sp-wm{font-size:42px}.sp-lock{gap:10px}}
 @media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
-<script>window.APPV="1791515481";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791516796";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1244,7 +1244,7 @@ const TIPS={
  strength:"Ranks teams only on points expected from today to season's end, ignoring what's already banked. Better than the real standing means the team should climb.",
  pace:"Points so far minus what the player's projection expected for the games played. A few games of this is mostly luck.",
  range:"Each shape shows how often a team ends on each final point total across the simulated seasons.",
- trend:"How many places the team is projected to move between today's real standing and the final standings.",
+ trend:"Places the team moved since the last update: since yesterday morning, or since puck drop while tonight's games are on.",
  conf:"How much to trust the numbers. Early in the season, projections drive everything; as games pile up, real results take over.",
  luck:"Goals compared with what his shots would normally produce at his usual shooting percentage."
 };
@@ -1546,6 +1546,8 @@ function today(){
 }
 
 /* ---------- RACE ---------- */
+function moveOf(x,view){const D=R.daily||[];const base=liveNew()&&R.teams.some(t=>t.live)?D[D.length-1]:prevDay();const b=base&&base.teams[x.name];if(!b)return 0;
+  return view==="real"?(b.rank_now??0)-realRank(x):(b.rank??0)-x.rank_proj}
 function race(){
   const view=store.get("pool.raceView","real"), Ts=R.teams, maxW=Math.max(...Ts.map(y=>y.win));
   const order=view==="real"?real():Ts;
@@ -1553,14 +1555,14 @@ function race(){
     <div class="rk">${view==="real"?realLab(x):x.rank_proj}${(view==="real"?realRank(x):x.rank_proj)<=3?`<i class="pod g${view==="real"?realRank(x):x.rank_proj}"></i>`:""}</div>
     <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}</div></div></div>
     <div class="r"><b>${view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span>${view==="real"&&x.live?`<span class="lvp lvr">+${x.live} live</span>`:""}</div>
-    <div class="r">${places(realRank(x)-x.rank_proj)}</div>
+    <div class="r">${places(moveOf(x,view))}</div>
     <div class="r h1"><b>${pct(x.win)}</b><div class="bar ${x.name===ME?"me":""}" style="margin-top:4px"><i data-w="${(x.win/maxW*100).toFixed(1)}"></i></div></div>
     <div class="r h2">${starBtn(x.name)}</div></div>`).join("");
   const other=Ts[0].name===ME?Ts[1].name:Ts[0].name;
   $("#race").innerHTML=`
   <div class="sec-h"><div><h2>${view==="real"?"Standings":"Projected finish"}</h2><p>${view==="real"?(R.teams.some(x=>x.live)?`Points banked through ${fmtDate(R.asof)}, plus tonight's live points. Final totals lock in the morning.`:`Points banked through ${fmtDate(R.asof)}, same order as the pool app.`):"Where each team is expected to finish."}</p></div>
     <div class="seg" role="radiogroup" aria-label="Standings view"><button role="radio" data-rv="real" aria-checked="${view==="real"}">Real</button><button role="radio" data-rv="proj" aria-checked="${view==="proj"}">Projected</button></div></div>
-  <div class="card rise"><div class="srow shead"><div>#</div><div>Team</div><div class="r">${view==="real"?"Pts":"Proj"}</div><div class="r" style="display:flex;justify-content:flex-end;gap:4px"><span class="hide-sm">Outlook</span><span class="show-sm">Move</span> ${q("trend")}</div><div class="r h1" style="display:flex;justify-content:flex-end;gap:4px">Win ${q("win")}</div><div class="r h2"></div></div><div id="srows">${rowsHTML}</div></div>
+  <div class="card rise"><div class="srow shead"><div>#</div><div>Team</div><div class="r">${view==="real"?"Pts":"Proj"}</div><div class="r" style="display:flex;justify-content:flex-end;gap:4px"><span>Move</span> ${q("trend")}</div><div class="r h1" style="display:flex;justify-content:flex-end;gap:4px">Win ${q("win")}</div><div class="r h2"></div></div><div id="srows">${rowsHTML}</div></div>
   <div class="card rise"><div class="card-h"><h3>Standings over time</h3><span class="small">Tap a logo to follow a team</span></div><div id="sotChart"></div></div>
 `;
   flipRows(); drawStand(); drawOdds(); drawRace(); drawDist();
