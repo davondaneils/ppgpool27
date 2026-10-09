@@ -1206,7 +1206,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791566059";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791566721";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1495,43 +1495,79 @@ function pulseHTML(){const Pz=R.pulse;if(!Pz||!Pz.items||!Pz.items.length)return
 /* ---------- TODAY ---------- */
 
 function heroLine(t){
+  // Best news first: gather every true, encouraging line for this team, score it, show the best (ties rotate daily).
+  // Projected finish and title odds only speak to teams in the top half; everyone else gets real standings, last night, tonight and their best player.
   const byP=[...R.teams].sort((a,b)=>b.sim-a.sim),lead=byP[0],sec=byP[1],me1=lead.name===t.name;
-  const gapNow=Math.round(me1?t.sim-sec.sim:lead.sim-t.sim),pts=n=>`${n} ${n===1?"point":"points"}`;
+  const gapNow=Math.round(me1?t.sim-sec.sim:lead.sim-t.sim),pts=n=>`${n} ${n===1?"point":"points"}`,an=s=>/^(8|11\D|18\D)/.test(s)?"an":"a";
   const tg=Object.values(R.team_gp||{}),avg=tg.length?tg.reduce((x,y)=>x+y,0)/tg.length:0,sg=R.season_games||82,frac=avg/sg,left=Math.max(0,Math.round(sg-avg));
-  const phase=frac<0.25?"early":frac<0.7?"mid":"late";
-  // week-ago comparison (needs at least 5 days of history)
+  const phase=frac<0.25?"early":frac<0.7?"mid":"late",N=R.teams.length,top=t.rank_proj<=Math.ceil(N/2);
+  const rk=(v,vs)=>({r:1+vs.filter(x=>x>v).length,tie:vs.filter(x=>x===v).length>1});
+  const C=[],add=(s,h)=>C.push([s,h]);
+  const rr=realRank(t),now=real(),byW=[...R.teams].sort((x,y)=>y.win-x.win),wRank=byW.findIndex(x=>x.name===t.name)+1;
+  const below=byP[t.rank_proj]||null,above=byP[t.rank_proj-2]||null,ros=[...R.teams].sort((x,y)=>y.ros-x.ros).findIndex(x=>x.name===t.name)+1;
+  const half=Math.ceil(N/2),sb=rr<t.rank_proj?10:0,pb=t.rank_proj<rr?10:0;
+  // week-ago comparison (needs at least 5 days of history); only the good news
   const D=R.daily||[],cut=addDays(R.asof,-7);let W=null;for(const d of D){if(d.asof<=cut)W=d}
   if(!W&&D.length&&D[0].asof<=addDays(R.asof,-5))W=D[0];
   const w=W&&W.teams[t.name];
   if(w&&phase!=="late"){
-    const wLead=Object.entries(W.teams).sort((x,y)=>y[1].sim-x[1].sim)[0],wLeadName=wLead[0];
-    const wGap=Math.round(t.name===wLeadName?w.sim-Object.entries(W.teams).sort((x,y)=>y[1].sim-x[1].sim)[1][1].sim:wLead[1].sim-w.sim);
-    if(!me1&&t.rank_proj<=4&&wLeadName!==lead.name&&wLeadName!==t.name)return `New target: you're chasing <em>${esc(lead.name)}</em> for 1st, ${pts(gapNow)} back.`;
-    if(me1&&w.rank!==1)return `You've taken over: projected to <em>win the pool</em>, ${pts(gapNow)} clear of ${esc(sec.name)}.`;
-    if(w.rank-t.rank_proj>=2)return `Up to <em>${ord(t.rank_proj)}</em> projected, from ${ord(w.rank)} a week ago.`;
-    if(!me1&&wLeadName!==t.name&&wGap-gapNow>=5)return `You've cut the gap to <em>${gapNow}</em>. It was ${wGap} a week ago.`;
-    if(t.rank_proj-w.rank>=2)return `Projected <em>${ord(t.rank_proj)}</em> now, down from ${ord(w.rank)}. ${pts(gapNow)} back with ${left} games to go.`;
-    if(!me1&&wLeadName===lead.name&&gapNow-wGap>=5)return `${esc(lead.name)} has stretched it to <em>${gapNow}</em>, from ${wGap} last week. Plenty of hockey left.`;
-    const dw=Math.round((t.win-w.win)*100);if(Math.abs(dw)>=3)return `Your title odds ${dw>0?"climbed":"slipped"} to <em>${esc(pct(t.win))}</em> this week, from ${esc(pct(w.win))}.`;
+    const wl=Object.entries(W.teams).sort((x,y)=>y[1].sim-x[1].sim),wLeadName=wl[0][0];
+    const wGap=Math.round(t.name===wLeadName?w.sim-wl[1][1].sim:wl[0][1].sim-w.sim);
+    if(me1&&w.rank!==1)add(110,`You've taken over: projected to <em>win the pool</em>, ${pts(gapNow)} clear of ${esc(sec.name)}.`);
+    if(top&&w.rank-t.rank_proj>=2)add(90,`Up to <em>${ord(t.rank_proj)}</em> projected, from ${ord(w.rank)} a week ago.`);
+    else if(w.rank-t.rank_proj>=2)add(70,`You've climbed <em>${w.rank-t.rank_proj} spots</em> in the projections this week.`);
+    if(top&&!me1&&wLeadName!==t.name&&wGap-gapNow>=5)add(75,`You've cut the gap to 1st to <em>${gapNow}</em>. It was ${wGap} a week ago.`);
+    const dw=Math.round((t.win-w.win)*100);if(top&&dw>=3)add(72,`Your title odds climbed to <em>${esc(pct(t.win))}</em> this week, from ${esc(pct(w.win))}.`);
+    if(!me1&&t.rank_proj<=4&&wLeadName!==lead.name&&wLeadName!==t.name)add(60,`New target: you're chasing <em>${esc(lead.name)}</em> for 1st, ${pts(gapNow)} back.`);
   }
-  // quiet day: rotate through true angles, one per day (same for everyone, steady all day)
-  const A=[],rr=realRank(t),byW=[...R.teams].sort((x,y)=>y.win-x.win),wRank=byW.findIndex(x=>x.name===t.name)+1;
-  const below=byP[t.rank_proj]||null,ros=[...R.teams].sort((x,y)=>y.ros-x.ros).findIndex(x=>x.name===t.name)+1;
-  if(phase==="late"){const rl=real(),top=rl[0];
-    if(top.name===t.name){const g=t.banked-rl[1].banked;A.push(`You're <em>on top</em>, ${pts(g)} clear with ${left} games left.`);A.push(`${esc(rl[1].name)} is ${pts(g)} behind you with <em>${left} games</em> to play.`)}
-    else{const g=top.banked-t.banked,per=left?(g/left):0;A.push(`${pts(g)} back of 1st with <em>${left} games left</em>. You need about ${per.toFixed(1)} more points a night than ${esc(top.name)}.`);
-      A.push(`You're <em>${ord(rr)}</em> with ${left} games to go, ${pts(g)} behind ${esc(top.name)}.`)}
-    if(t.win>=0.05)A.push(`You've got a <em>${esc(pct(t.win))}</em> shot at the title with ${left} games left.`)}
+  // the race
+  if(phase==="late"){const g1=now[0];
+    if(g1.name===t.name){const g=t.banked-now[1].banked;add(100,`You're <em>on top</em>, ${pts(g)} clear with ${left} games left.`);add(96,`${esc(now[1].name)} is ${pts(g)} behind you with <em>${left} games</em> to play.`)}
+    else{const g=g1.banked-t.banked,per=left?(g/left):0;if(rr<=4)add(62,`${pts(g)} back of 1st with <em>${left} games left</em>. You need about ${per.toFixed(1)} more points a night than ${esc(g1.name)}.`);
+      if(rr<=6)add(58,`You're <em>${ord(rr)}</em> with ${left} games to go, ${pts(g)} behind ${esc(g1.name)}.`)}
+    if(t.win>=0.05)add(70,`You've got ${an(pct(t.win))} <em>${esc(pct(t.win))}</em> shot at the title with ${left} games left.`)}
   else{
-    if(phase==="mid")A.push(me1?`${ord(rr)} today, and projected to <em>win the pool</em> by ${pts(gapNow)}.`:`You're ${ord(rr)} today and projected <em>${ord(t.rank_proj)}</em>, ${pts(gapNow)} back of ${esc(lead.name)}.`);
-    else A.push(me1?`You're projected to <em>win the pool</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} clear of ${esc(sec.name)}.`:`You're projected to finish <em>${ord(t.rank_proj)}</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} back of ${esc(lead.name)}.`);
-    if(wRank<=6)A.push(wRank===1?`Nobody has better title odds than you: <em>${esc(pct(t.win))}</em>.`:`You've got a <em>${esc(pct(t.win))}</em> shot at the title, ${ord(wRank)} best in the pool.`);
-    if(below){const g=Math.round(t.sim-below.sim);A.push(g<=10?`${esc(below.name)} is right behind you, <em>${pts(g)}</em> back in the projections.`:`You've got a <em>${g}-point</em> cushion on ${esc(below.name)} in the projections.`)}
-    if(Math.abs(rr-t.rank_proj)>=3)A.push(rr>t.rank_proj?`${ord(rr)} today, but projected <em>${ord(t.rank_proj)}</em>. ${phase==="early"?"The early standings won't last.":"The best is still ahead."}`:`${ord(rr)} today, projected <em>${ord(t.rank_proj)}</em>. You've banked a head start.`);
-    if(ros<=4)A.push(ros===1?`From here on, you're projected to <em>outscore every team</em> in the pool.`:ros===2?`From here on, only <em>one team</em> is projected to outscore you.`:`From here on, only <em>${ros-1} teams</em> are projected to outscore you.`);
+    if(me1)add(100,phase==="mid"?`${ord(rr)} today, and projected to <em>win the pool</em> by ${pts(gapNow)}.`:`You're projected to <em>win the pool</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} clear of ${esc(sec.name)}.`);
+    else if(top)add((t.rank_proj<=4?80:55)+pb,phase==="mid"?`You're ${ord(rr)} today and projected <em>${ord(t.rank_proj)}</em>, ${pts(gapNow)} back of ${esc(lead.name)}.`:`You're projected to finish <em>${ord(t.rank_proj)}</em>, ${gapNow<=10?"just ":""}${pts(gapNow)} back of ${esc(lead.name)}.`);
+    if(wRank<=6&&top)add((wRank<=2?85:70)+pb,wRank===1?`Nobody has better title odds than you: <em>${esc(pct(t.win))}</em>.`:`You've got ${an(pct(t.win))} <em>${esc(pct(t.win))}</em> shot at the title, ${ord(wRank)} best in the pool.`);
+    if(ros<=4)add(65,ros===1?`From here on, you're projected to <em>outscore every team</em> in the pool.`:ros===2?`From here on, only <em>one team</em> is projected to outscore you.`:`From here on, only <em>${ros-1} teams</em> are projected to outscore you.`);
+    if(top&&below){const g=Math.round(t.sim-below.sim);if(g>10)add(45,`You've got a <em>${g}-point</em> cushion on ${esc(below.name)} in the projections.`)}
+    if(top&&rr-t.rank_proj>=3)add(50,`${ord(rr)} today, but projected <em>${ord(t.rank_proj)}</em>. ${phase==="early"?"The early standings won't last.":"The best is still ahead."}`);
   }
+  // next team to catch
+  if(above&&phase!=="late"){const g=Math.round(above.sim-t.sim);if(g<=3)add(72,`Just <em>${pts(g)}</em> behind ${esc(above.name)} in the projections.`);else if(g<=10)add(56,`${esc(above.name)} is only <em>${pts(g)}</em> ahead of you in the projections.`)}
+  if(rr>1){const up=now.filter(x=>x.banked>t.banked).pop(),g=up?up.banked-t.banked:99;if(g<=3)add(62,`Only <em>${pts(g)}</em> behind ${esc(up.name)} in the standings.`)}
+  // the real standings, when they're good (top half only); whichever of standings or projections is better gets the edge
+  if(phase!=="late"&&rr<=half){const g1=now[0],g=g1.banked-t.banked,third=now[2];
+    if(rr===1){const nx=now.find(x=>x.name!==t.name),c=t.banked-nx.banked;add(95+sb,c?`You're <em>1st in the pool</em> right now, ${pts(c)} clear.`:`You're <em>tied for 1st</em> in the pool right now.`)}
+    else if(g<=5)add(93+sb,`Just <em>${pts(g)}</em> back of 1st in the pool standings.`);
+    else if(rr<=3)add(78+sb,`You're <em>${ord(rr)}</em> in the pool right now, ${pts(g)} back of 1st.`);
+    else if(third&&third.banked-t.banked<=3)add(80+sb,`Only <em>${pts(third.banked-t.banked)}</em> from breaking into the top 3.`);
+    const Dl=(R.daily||[]),yd=Dl.length>1&&Dl[Dl.length-1].asof===R.asof?Dl[Dl.length-2].teams[t.name]:null;
+    if(yd&&yd.rank_now-rr>=2)add(82+sb,`Up <em>${yd.rank_now-rr} spots</em> in the standings since yesterday, to ${ord(rr)}.`);
+    if(t.rank_proj-rr>=3)add(50+sb,`${ord(rr)} today, projected <em>${ord(t.rank_proj)}</em>. You've banked a head start.`)}
+  // last night
+  const lnOf=x=>x.players.reduce((s,p)=>s+(p.last&&p.last.date===R.asof?p.last.g+p.last.a:0),0),ln=lnOf(t);
+  if(ln>0){const k=rk(ln,R.teams.map(lnOf));
+    if(k.r===1)add(92,`<em>${pts(ln)}</em> last night, ${k.tie?"tied for ":""}the most in the pool.`);
+    else if(k.r<=3)add(74,`<em>${pts(ln)}</em> last night, ${k.tie?"tied for ":""}${ord(k.r)} most in the pool.`)}
+  const bn=t.players.filter(p=>p.last&&p.last.date===R.asof&&p.last.g+p.last.a>=3).sort((a,b)=>(b.last.g+b.last.a)-(a.last.g+a.last.a))[0];
+  if(bn){const n=bn.last.g+bn.last.a;add(n>=4?88:78,bn.last.g>=3?`${esc(bn.name)} scored a <em>hat trick</em> for you last night.`:`${esc(bn.name)} put up <em>${n} points</em> for you last night.`)}
+  // tonight
+  const td=todayISO(),on=new Set((R.schedule||[]).filter(g=>g.date===td&&g.ag==null).flatMap(g=>[g.away,g.home]));
+  if(on.size){const nOn=x=>x.players.filter(p=>on.has(p.nhl)&&p.rate>0&&p.lineup!=="injured").length,n=nOn(t);
+    if(n>=3){const k=rk(n,R.teams.map(nOn));if(k.r===1)add(68,`<em>${n} of your players</em> are on the ice tonight, ${k.tie?"tied for ":""}the most in the pool.`)}}
+  // your best player
+  const all=P.map(p=>p.pts),star=[...t.players].sort((a,b)=>b.pts-a.pts)[0];
+  if(star&&star.pts>0){const k=rk(star.pts,all);
+    if(k.r===1)add(90,k.tie?`${esc(star.name)} is <em>tied for 1st</em> in the whole pool with ${pts(star.pts)}.`:`${esc(star.name)} <em>leads the whole pool</em> with ${pts(star.pts)}.`);
+    else if(k.r<=5)add(66,`${esc(star.name)} is <em>${k.tie?"tied for ":""}${ord(k.r)}</em> in the whole pool with ${pts(star.pts)}.`);
+    else if(k.r<=10)add(52,`${esc(star.name)} is <em>${k.tie?"tied for ":""}${ord(k.r)}</em> among all ${all.length} players in the pool.`);
+    else add(20,`${esc(star.name)} leads your team with <em>${pts(star.pts)}</em>.`)}
+  if(!C.length)add(1,left?`<em>${left} games</em> to go. Plenty of time to make a move.`:`That's the season. Thanks for playing.`);
+  C.sort((a,b)=>b[0]-a[0]);const best=C.filter(c=>c[0]>=C[0][0]-6);
   const day=Math.round(new Date(R.asof+"T12:00:00").getTime()/864e5);
-  return A[((day%A.length)+A.length)%A.length]}
+  return best[((day%best.length)+best.length)%best.length][1]}
 function today(){
   const t=meT(), lead=R.teams[0], pd=prevDay(), [cA,cB]=confidence(), stale=staleTeams();
   const mine=t.players;
