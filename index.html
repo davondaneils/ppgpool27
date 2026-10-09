@@ -892,6 +892,11 @@ body:has(footer .fresh-end) #foot{display:none}
 #today .hcw .hc2{row-gap:32px;margin-top:8px}
 .top .brand{cursor:pointer;-webkit-tap-highlight-color:transparent}.top .brand:active{opacity:.75}
 .seg-sm button{padding:5px 10px;font-size:12px}
+.wrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:12px}
+.wrow .wcap{line-height:1.35}.wrow .wcap b{color:var(--fg);font-weight:700}
+#lbody .wrow,#race .wrow{margin-bottom:0}
+.wtot{color:var(--me);font-weight:700}
+.statgrid.six.wpg{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:0;border-top:0}
 .ob{position:fixed;inset:0;z-index:210;background:var(--bg);overflow:hidden;transition:opacity .4s,transform .4s;animation:obIn .45s ease}
 @keyframes obIn{from{opacity:0}}
 .ob.leaving .ob-in{opacity:0;transform:translateY(-10px) scale(.98);transition:opacity .26s ease,transform .3s ease}
@@ -1198,7 +1203,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791562519";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791563738";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1311,6 +1316,24 @@ function weekPts(p){const ws=weekStart(R.asof);return (p.log||[]).reduce((s,e)=>
 function playedWeek(p){const ws=weekStart(R.asof);return (p.log||[]).some(e=>e[0]>=ws&&e[3]!=null)}
 function weekLabel(){return "this week"}
 function teamWeek(n){const t=R.teams.find(x=>x.name===n);return t?t.players.reduce((s,p)=>s+weekPts(p),0):0}
+/* points window for rosters, Race and player sheets: the season, last night (the latest game day), this week (Mon to Sun) or this month, from game logs plus tonight's live points */
+const WINS=[["season","Season"],["night","Last night"],["week","Week"],["month","Month"]];
+function curWin(){const w=store.get("pool.win","season");return WINS.some(x=>x[0]===w)?w:"season"}
+function winAnchor(){return liveNew()?liveDate():R.asof}
+function winStart(w){const a=winAnchor();return w==="night"?R.asof:w==="week"?weekStart(a):w==="month"?a.slice(0,8)+"01":""}
+function winIn(w,d){return w==="night"?d===R.asof:d>=winStart(w)}
+function winStat(p,w){if(w==="season")return {gp:p.gp,g:p.g,a:p.a,pts:p.pts};const o={gp:0,g:0,a:0,pts:0};
+  (p.log||[]).forEach(e=>{if(e[3]!=null&&winIn(w,e[0])){o.gp++;o.g+=e[3];o.a+=e[4]}});
+  if(w!=="night"&&liveNew()&&p.g0!=null&&winIn(w,liveDate())){o.g+=p.g-p.g0;o.a+=p.a-p.a0;o.gp+=p.gp-p.gp0}
+  o.pts=o.g+o.a;return o}
+const winPts=(p,w)=>winStat(p,w).pts;
+const teamWin=(t,w)=>t.players.reduce((s,p)=>s+winPts(p,w),0);
+function winLabel(w){const a=winAnchor();return w==="night"?fmtDate(R.asof):w==="week"?"the week of "+fmtDate(weekStart(a)):w==="month"?new Date(a+"T12:00:00").toLocaleDateString("en-CA",{month:"long"}):"the season"}
+function winSeg(w){return `<div class="seg seg-sm wseg" role="radiogroup" aria-label="Points for">${WINS.map(([k,l])=>`<button role="radio" data-win="${k}" aria-checked="${w===k}">${l}</button>`).join("")}</div>`}
+/* the pool's best single night, week and month by a team, from game logs (rosters never change, so logs give every team's full history) */
+function winBest(w){if(w==="season")return null;const key=d=>w==="night"?d:w==="week"?weekStart(d):d.slice(0,7);const T={};
+  R.teams.forEach(t=>t.players.forEach(p=>(p.log||[]).forEach(e=>{if(e[3]==null)return;const k=t.name+"|"+key(e[0]);T[k]=(T[k]||0)+e[3]+e[4]})));
+  let b=null;Object.entries(T).forEach(([k,v])=>{const [n,d]=k.split("|");if(!b||v>b.v||(v===b.v&&d<b.d))b={n,d,v}});return b}
 function staleTeams(){if(R.check&&Array.isArray(R.check.skipped)&&R.check.date===R.asof)return R.check.skipped;const out=[];const S=R.schedule||[];for(const c in (R.team_gp||{})){const n=S.filter(g=>g.date<=R.asof&&(g.away===c||g.home===c)&&g.ag!=null).length;const playedYday=S.some(g=>g.date===R.asof&&(g.away===c||g.home===c));if(playedYday&&n&&R.team_gp[c]<n)out.push(c)}return out}
 function todayISO(){return new Date().toLocaleDateString("en-CA")}
 
@@ -1593,19 +1616,24 @@ function moveOf(x,view){const D=R.daily||[];const base=liveNew()&&R.teams.some(t
   return view==="real"?(b.rank_now??0)-realRank(x):(b.rank??0)-x.rank_proj}
 function race(){
   const view=store.get("pool.raceView","real"), Ts=R.teams, maxW=Math.max(...Ts.map(y=>y.win));
-  const order=view==="real"?real():Ts;
+  const w=view==="real"?curWin():"season",W=w==="season"?null:w,wv=W?Object.fromEntries(Ts.map(t=>[t.name,teamWin(t,W)])):{};
+  const wRank=x=>1+Ts.filter(y=>wv[y.name]>wv[x.name]).length,wLab=x=>(Ts.filter(y=>wv[y.name]===wv[x.name]).length>1?"T":"")+wRank(x);
+  const wTop=x=>{const ps=x.players.map(p=>[p,winPts(p,W)]).filter(a=>a[1]>0).sort((a,b)=>b[1]-a[1]);return ps.length?`<span class="hide-sm">Led by </span>${esc(lastName(ps[0][0]))} ${ps[0][1]}`:"No points yet"};
+  const order=W?[...Ts].sort((a,b)=>wv[b.name]-wv[a.name]||b.banked-a.banked||a.name.localeCompare(b.name)):view==="real"?real():Ts;
+  const best=W?winBest(W):null,bestTxt=best&&best.v>0?`Pool record for ${W==="night"?"one night":W==="week"?"a week":"a month"}: <b>${best.v}</b> by ${esc(best.n)}, ${W==="night"?fmtDate(best.d):W==="week"?"week of "+fmtDate(best.d):new Date(best.d+"-15T12:00:00").toLocaleDateString("en-CA",{month:"long"})}.`:"";
   const rowsHTML=order.map(x=>`<div class="srow ${x.name===ME?"me":""}" data-team="${esc(x.name)}">
-    <div class="rk">${view==="real"?realLab(x):x.rank_proj}${(view==="real"?realRank(x):x.rank_proj)<=3?`<i class="pod g${view==="real"?realRank(x):x.rank_proj}"></i>`:""}</div>
-    <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}${(c=>c?`<span class="pt-ct"><span class="hide-sm"> · </span>${c} <span class="hide-sm">playing </span>tonight</span>`:"")(tonightCount(x))}</div></div></div>
-    <div class="r"><b>${view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span>${view==="real"&&x.live?`<span class="lvp lvr">+${x.live} live</span>`:""}</div>
-    <div class="r">${places(moveOf(x,view))}</div>
+    <div class="rk">${W?wLab(x):view==="real"?realLab(x):x.rank_proj}${(r=>r<=3&&(!W||wv[x.name]>0)?`<i class="pod g${r}"></i>`:"")(W?wRank(x):view==="real"?realRank(x):x.rank_proj)}</div>
+    <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${W?`${wTop(x)}`:view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}${(c=>c?`<span class="pt-ct"><span class="hide-sm"> · </span>${c} <span class="hide-sm">playing </span>tonight</span>`:"")(tonightCount(x))}</div></div></div>
+    <div class="r"><b>${W?wv[x.name]:view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span>${view==="real"&&x.live&&(!W||(W!=="night"&&winIn(W,liveDate())))?`<span class="lvp lvr">+${x.live} live</span>`:""}</div>
+    <div class="r">${W?`<span class="small num">${realLab(x).startsWith("T")?"T":""}${ord(realRank(x))}</span>`:places(moveOf(x,view))}</div>
     <div class="r h1"><b>${pct(x.win)}</b><div class="bar ${x.name===ME?"me":""}" style="margin-top:4px"><i data-w="${(x.win/maxW*100).toFixed(1)}"></i></div></div>
     <div class="r h2">${starBtn(x.name)}</div></div>`).join("");
   const other=Ts[0].name===ME?Ts[1].name:Ts[0].name;
   $("#race").innerHTML=`
-  <div class="sec-h"><div><h2>${view==="real"?"Standings":"Projected finish"}</h2><p>${view==="real"?(R.teams.some(x=>x.live)?`Points banked through ${fmtDate(R.asof)}, plus tonight's live points. Final totals lock in the morning.`:`Points banked through ${fmtDate(R.asof)}, same order as the pool app.`):"Where each team is expected to finish."}</p></div>
+  <div class="sec-h"><div><h2>${W?{night:"Last night",week:"Best week",month:"Best month"}[W]:view==="real"?"Standings":"Projected finish"}</h2><p>${W?(W==="night"?`Points scored on ${fmtDate(R.asof)}.`:W==="week"?`Who's having the best week in the pool, ${winLabel(W).replace("the ","")}. Resets every Monday.`:`Points scored in ${winLabel(W)}. Resets on the 1st.`):view==="real"?(R.teams.some(x=>x.live)?`Points banked through ${fmtDate(R.asof)}, plus tonight's live points. Final totals lock in the morning.`:`Points banked through ${fmtDate(R.asof)}, same order as the pool app.`):"Where each team is expected to finish."}</p></div>
     <div class="seg" role="radiogroup" aria-label="Standings view"><button role="radio" data-rv="real" aria-checked="${view==="real"}">Real</button><button role="radio" data-rv="proj" aria-checked="${view==="proj"}">Projected</button></div></div>
-  <div class="card rise"><div class="srow shead"><div>#</div><div>Team</div><div class="r">${view==="real"?"Pts":"Proj"}</div><div class="r" style="display:flex;justify-content:flex-end;gap:4px"><span>Move</span> ${q("trend")}</div><div class="r h1" style="display:flex;justify-content:flex-end;gap:4px">Win ${q("win")}</div><div class="r h2"></div></div><div id="srows">${rowsHTML}</div></div>
+  ${view==="real"?`<div class="wrow">${winSeg(w)}${bestTxt?`<span class="small wcap">${bestTxt}</span>`:""}</div>`:""}
+  <div class="card rise"><div class="srow shead"><div>#</div><div>Team</div><div class="r">${view==="real"?"Pts":"Proj"}</div><div class="r" style="display:flex;justify-content:flex-end;gap:4px">${W?"<span>Overall</span>":`<span>Move</span> ${q("trend")}`}</div><div class="r h1" style="display:flex;justify-content:flex-end;gap:4px">Win ${q("win")}</div><div class="r h2"></div></div><div id="srows">${rowsHTML}</div></div>
   <div class="card rise"><div class="card-h"><h3>Standings over time</h3><span class="small">Tap a logo to follow a team</span></div><div id="sotChart"></div></div>
 `;
   flipRows(); drawStand(); drawOdds(); drawRace(); drawDist();
@@ -1685,17 +1713,18 @@ function mine(){
   $("#mine").innerHTML=`
   <div class="sec-h"><div class="who">${crest(t.name,"lg")}<div><h2>${esc(t.name)}</h2><p>${lead.name===t.name?`Projected to win it by ${Math.round(gap)} points.`:`Projected ${Math.round(gap)} points back of ${esc(lead.name)} for 1st.`}</p></div></div></div>
   <div class="kp card rise">${[["Projected finish",ord(t.rank_proj),`${Math.round(t.sim)} pts · likely ${t.p10}–${t.p90}`,"proj","hi"],["Win odds",pct(t.win),`Top 3: ${pct(t.top3)}`,"win",""],["Real standing",ord(realRank(t)),`${t.banked} points banked`,"",""],["Strength from here",ord(t.rank_ros),`${Math.round(t.ros)} pts to come`,"strength",""]].map(([k,v,s,tp,c])=>`<div class="kc ${c}"><div class="kk">${k}${tp?" "+q(tp):""}</div><div class="kpv">${String(v).replace(/(\d)(st|nd|rd|th|%)$/,"$1<small>$2</small>")}</div><div class="ks">${s}</div></div>`).join("")}</div>
-  <div class="card rise"><div class="card-h"><h3>Roster</h3><div class="seg seg-sm" role="radiogroup" aria-label="Sort roster">${RSORT.map(([k,l])=>`<button role="radio" data-rs="${k}" aria-checked="${rs===k}">${l}</button>`).join("")}</div></div><div class="tw" id="rostTw">${ptable(sortRoster(ps,rs))}</div><p class="small" style="margin-top:8px">Tap a player for details.</p></div>
+  <div class="card rise"><div class="card-h"><h3>Roster</h3><div class="seg seg-sm" role="radiogroup" aria-label="Sort roster">${RSORT.map(([k,l])=>`<button role="radio" data-rs="${k}" aria-checked="${rs===k}">${l}</button>`).join("")}</div></div><div class="wrow">${winSeg(curWin())}<span class="small wcap">${winCap(curWin(),t)}</span></div><div class="tw" id="rostTw">${ptable(sortRoster(ps,rs))}</div><p class="small" style="margin-top:8px">Tap a player for details.</p></div>
   <div class="card rise"><div class="card-h"><h3>Head to head</h3><select id="h2h" aria-label="Opponent">${opps.map(x=>`<option ${x.name===opp.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div><div id="h2hbox"></div></div>`;
   headToHead(opp);
   $("#h2h").onchange=e=>{store.set("pool.h2h",e.target.value);headToHead(R.teams.find(x=>x.name===e.target.value))};
 }
 const RSORT=[["draft","Draft"],["pts","Points"],["final","Proj."]];
-function sortRoster(ps,k){const a=[...ps];if(k==="pts")a.sort((x,y)=>y.pts-x.pts||(y.livePts||0)-(x.livePts||0)||y.final-x.final);else if(k==="final")a.sort((x,y)=>y.final-x.final);else a.sort((x,y)=>x.round-y.round);return a}
-function ptable(ps){
-  return `<table class="ptab"><thead><tr><th class="l">Player</th><th class="opt">Rd</th><th>GP</th><th class="opt">G</th><th class="opt">A</th><th>PTS</th><th class="opt">TOI</th><th><span style="display:inline-flex;gap:4px;align-items:center">Pace ${q("pace")}</span></th><th>Final</th></tr></thead><tbody>${ps.map(p=>`<tr class="tap" data-p="${pkey(p)}">
+function winCap(w,t){if(w==="season")return "Points this season";const v=teamWin(t,w);return `<b>${v}</b> point${v===1?"":"s"} ${w==="night"?"on":"in"} ${winLabel(w)}`}
+function sortRoster(ps,k){const a=[...ps],w=curWin();if(k==="pts"&&w!=="season")a.sort((x,y)=>winPts(y,w)-winPts(x,w)||y.pts-x.pts);else if(k==="pts")a.sort((x,y)=>y.pts-x.pts||(y.livePts||0)-(x.livePts||0)||y.final-x.final);else if(k==="final")a.sort((x,y)=>y.final-x.final);else a.sort((x,y)=>x.round-y.round);return a}
+function ptable(ps,w){w=w||curWin();const W=w==="season"?null:w;
+  return `<table class="ptab${W?" pwin":""}"><thead><tr><th class="l">Player</th><th class="opt">Rd</th><th>GP</th><th class="opt">G</th><th class="opt">A</th><th>${W?{night:"Night",week:"Week",month:"Month"}[W]:"PTS"}</th><th class="opt">TOI</th><th><span style="display:inline-flex;gap:4px;align-items:center">Pace ${q("pace")}</span></th><th>Final</th></tr></thead><tbody>${ps.map(p=>`<tr class="tap" data-p="${pkey(p)}">
    <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}${tonightTag(p)}</div>${chips(p)}</div></div></td>
-   <td class="opt">${p.round}</td><td>${p.gp}</td><td class="opt">${p.g}</td><td class="opt">${p.a}</td><td><b>${p.pts}</b>${p.livePts?`<i class="lvp lvt">+${p.livePts}</i>`:""}</td><td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
+   <td class="opt">${p.round}</td>${(s=>`<td>${s.gp}</td><td class="opt">${s.g}</td><td class="opt">${s.a}</td><td><b>${W&&!s.pts&&!s.gp?"–":s.pts}</b>${p.livePts&&(!W||(W!=="night"&&winIn(W,liveDate())))?`<i class="lvp lvt">+${p.livePts}</i>`:""}</td>`)(winStat(p,w))}<td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
 }
 const IC={susp:'<circle cx="12" cy="12" r="9.5"/><path d="M12 6.8v6.4" stroke="var(--card)" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.5" fill="var(--card)"/>',bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',cross:'<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6" fill="var(--card)"/><circle cx="15.5" cy="15.5" r="1.6" fill="var(--card)"/><circle cx="12" cy="12" r="1.6" fill="var(--card)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke="var(--card)" stroke-width="2" fill="none"/>',split:'<path d="M6 3v6l6 4 6-4V3M12 13v8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>',minus:'<circle cx="12" cy="12" r="9"/><path d="M7 12h10" stroke="var(--card)" stroke-width="2.4"/>',up:'<path d="M12 4 21 18H3z"/>',check:'<path d="M4 12.5 9.5 18 20 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',down:'<path d="M12 20 3 6h18z"/>',fire:'<path d="M12 2c1 3.2-.6 5-2 6.6C8.6 10.2 7 12 7 14.6A5 5 0 0 0 12 20a5 5 0 0 0 5-5.4c0-2-1-3.6-2-4.6.1 1.6-.6 2.8-1.6 3.2.4-3.6-.6-8.4-1.4-11.2z"/>',snow:'<path d="M11 2h2v4.3l2.6-1.5 1 1.7L13 8.6v2.7l2.3-1.4 3.7-2.1 1 1.7-3.7 2.1L18.6 13l-1 1.7-2.3-1.3L13 14.8v2.6l3.6 2.1-1 1.7-2.6-1.5V22h-2v-2.3l-2.6 1.5-1-1.7 3.6-2.1v-2.6l-2.3 1.4-2.3 1.3-1-1.7 2.3-1.4L3.6 9.8l1-1.7 3.7 2.1L11 11.3V8.6L7.4 6.5l1-1.7L11 6.3z"/>'};
 const ico=k=>`<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none">${IC[k]}</svg>`;
@@ -1741,11 +1770,12 @@ function league(){
    <div style="overflow-x:auto;margin-inline:-16px;padding-inline:16px;scrollbar-width:none;touch-action:pan-x pan-y pinch-zoom"><div class="seg" role="radiogroup" aria-label="League view">${LTABS.map(([k,l])=>`<button role="radio" data-lv="${k}" aria-checked="${sub===k}">${l}</button>`).join("")}</div></div><div id="lbody" class="stack"></div>`;
   ({rosters:lRosters,form:lForm,awards:lAwards,draft:lDraft,story:lStory})[sub]();
 }
-function lRosters(){
+function lRosters(openT){const lw=curWin();
   $("#lbody").innerHTML=`<div style="position:relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="q" placeholder="Find a player, NHL team or pool team…" autocomplete="off" aria-label="Search players"></div>
   <div class="rivnote"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><div><b>Tap ☆ to star your rivals${STARS.size?` · ${STARS.size} starred`:""}</b><span>Starred teams get their own Rival watch on Today, count as threats in Tonight's rooting guide and Pool Pulse, and become your default head-to-head on My team.</span></div></div>
   <div id="hits" class="card" hidden></div>
-  <div id="teamlist" class="stack" style="gap:10px">${real().map(t=>`<details class="card" style="padding:0" ${t.name===ME?"open":""}><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px"><div class="who" style="flex:1">${crest(t.name)}<div><div class="n">${esc(t.name)}${youBadge(t.name)}</div><div class="small">${ord(realRank(t))} now · ${t.banked} pts · ${ord(t.rank_proj)} projected · ${pct(t.win)} to win</div></div></div>${starBtn(t.name)}</summary><div class="tw" style="margin:0;padding:0 14px 10px">${ptable([...t.players].sort((a,b)=>a.round-b.round))}</div></details>`).join("")}</div>`;
+  <div class="wrow">${winSeg(lw)}${lw==="season"?"":`<span class="small wcap">Points ${lw==="night"?"on":"in"} ${winLabel(lw)}</span>`}</div>
+  <div id="teamlist" class="stack" style="gap:10px">${real().map(t=>`<details class="card" style="padding:0" ${(openT?openT.has(t.name):t.name===ME)?"open":""}><summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 14px"><div class="who" style="flex:1">${crest(t.name)}<div><div class="n">${esc(t.name)}${youBadge(t.name)}</div><div class="small">${lw==="season"?"":`<b class="wtot">${teamWin(t,lw)} ${{night:"last night",week:"this week",month:"this month"}[lw]}</b> · `}${ord(realRank(t))} now · ${t.banked} pts · ${ord(t.rank_proj)} projected · ${pct(t.win)} to win</div></div></div>${starBtn(t.name)}</summary><div class="tw" style="margin:0;padding:0 14px 10px">${ptable([...t.players].sort((a,b)=>a.round-b.round),lw)}</div></details>`).join("")}</div>`;
   const qi=$("#q");qi.oninput=()=>{const s=qi.value.trim().toLowerCase();if(!s){$("#hits").hidden=true;$("#teamlist").hidden=false;return}
     const m=P.filter(p=>(p.name+" "+p.nhl+" "+(TEAMN[p.nhl]||"")+" "+p.team).toLowerCase().includes(s)).slice(0,30);
     $("#hits").innerHTML=m.length?`<ul class="list">${m.map(p=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}</div><div class="small">${esc(p.team)} · Rd ${p.round}</div></div></div><span class="num"><b>${p.pts}</b> <span class="small">· ${Math.round(p.final)} proj</span></span></li>`).join("")}</ul>`:`<p class="empty">No players match "${esc(qi.value)}".</p>`;
@@ -1857,6 +1887,7 @@ function playerSheet(key){
    ${statusBox(p)}
    <div class="pline"><div class="pv"><b>${p.pts}</b><i>/${Math.round(p.final)}</i></div><div class="pm"><span>Points / projected</span><div class="pbar"><i style="width:${Math.min(100,p.pts/Math.max(1,p.final)*100).toFixed(1)}%"></i></div></div><em title="Projection rank among all ${P.length} pool players">#${rank}<small>rank</small></em></div>${dv?`<p class="small" style="margin-top:6px">${dv}</p>`:""}${p.streak>=2?`<p style="margin-top:8px"><span class="badge up">${p.streak}-game point streak</span></p>`:""}
    <div class="statgrid six"><div><b>${p.g}</b><span>G</span></div><div><b>${p.a}</b><span>A</span></div><div><b>${p.gp}</b><span>GP</span></div><div><b>${ppg.toFixed(2)}</b><span>P/GP</span></div><div><b>${p.sog??0}</b><span>SOG</span></div></div>
+   <div class="statgrid six wpg">${[["night","Last night"],["week","This week"],["month","This month"]].map(([k,l])=>{const s=winStat(p,k);return `<div><b>${!s.gp&&!s.pts?"–":s.pts}</b><span>${l}</span></div>`}).join("")}</div>
    <h4>Last ${Math.min(5,L.length)||""} game${Math.min(5,L.length)===1?"":"s"}</h4>${strip}
    <h4>Role and shooting ${q("luck")}</h4><p class="ptxt">${roleTxt||"No line data yet."}</p>${luckTxt?`<p class="ptxt">${luckTxt}</p>`:""}
    <h4>What he means for your odds</h4><div class="kv"><span>If he misses a month</span><span>${pct(base)} → <b>${pct(miss)}</b></span><span>If he breaks out (+25%)</span><span>${pct(base)} → <b>${pct(boom)}</b></span></div>
@@ -2037,6 +2068,7 @@ document.addEventListener("click",e=>{
   const gm=e.target.closest("[data-g]");if(gm){gameSheet(gm.dataset.g);return}
   const go=e.target.closest("[data-go]");if(go){setTab(go.dataset.go);return}
   const rv=e.target.closest("[data-rv]");if(rv){store.set("pool.raceView",rv.dataset.rv);race();animateBars($("#race"));return}
+  const wb=e.target.closest("[data-win]");if(wb){store.set("pool.win",wb.dataset.win);if(!$("#race").hidden){race();animateBars($("#race"))}else if(!$("#mine").hidden)mine();else if(!$("#league").hidden){const op=new Set($$("#teamlist details[open] .n").map(n=>n.firstChild.textContent));lRosters(op)}return}
   const rsb=e.target.closest("[data-rs]");if(rsb){store.set("pool.rosterSort",rsb.dataset.rs);const t=meT();$("#rostTw").innerHTML=ptable(sortRoster(t.players,rsb.dataset.rs));rsb.parentElement.querySelectorAll("[data-rs]").forEach(b=>b.setAttribute("aria-checked",b===rsb));return}
   const lv=e.target.closest("[data-lv]");if(lv){store.set("pool.leagueView",lv.dataset.lv);league();return}
   const ln=e.target.closest("[data-lens]");if(ln){store.set("pool.lens",ln.dataset.lens);recap();return}
