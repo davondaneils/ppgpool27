@@ -1,9 +1,17 @@
 name: Live watch
 
 # Stays up through game nights and redeploys the site whenever scores change (see scripts/live_watch.py).
-# Start times are added once approved; only one watcher runs at a time, and a start that finds games
-# far off exits right away.
+# Several start times give it a few chances to begin, since GitHub often skips scheduled runs; only one
+# watcher runs at a time, and a start that finds games far off exits right away. Times approved by Davon Oct 9.
 on:
+  schedule:
+    # Evenings, about 6:40 PM to 10:10 PM Toronto (covers 7 PM puck drops in both EDT and EST)
+    - cron: "40,55 22 * * *"
+    - cron: "10,25,40,55 23 * * *"
+    - cron: "10,40 0 * * *"
+    - cron: "10 1,2 * * *"
+    # Weekend matinees, about 12:40 to 5:40 PM Toronto
+    - cron: "40 16-21 * * 0,6"
   workflow_dispatch:
     inputs:
       kick:
