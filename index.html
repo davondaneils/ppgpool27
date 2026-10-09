@@ -289,7 +289,11 @@ body:has(#today:not([hidden])) #foot{display:none}
 .gc{flex:none;width:228px;aspect-ratio:3/4;scroll-snap-align:start;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:16px;border:1px solid var(--border);border-radius:var(--r);background:var(--card);box-shadow:var(--edge),0 1px 2px rgba(15,23,32,.05),0 8px 18px -12px rgba(15,23,32,.18)}
 .gc .score{font-family:var(--display);font-weight:800;font-size:30px;line-height:.9;margin-left:auto;grid-area:r}
 .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.06em}
-.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1.4s infinite}
+.live::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 60%,transparent);animation:livePulse 1.6s infinite}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--red) 55%,transparent)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.live b{font-weight:800;color:var(--red)}
+.live em{font-style:normal;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.live::before{animation:none}}
 @keyframes blink{50%{opacity:.25}}
 .pz-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:2px solid var(--fg)}
 .pz-mast{display:flex;align-items:center;line-height:0}
@@ -645,6 +649,8 @@ footer #foot{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .gt-t small{font-family:var(--sans);font-size:9px;font-weight:700;color:var(--muted);margin-left:2px;letter-spacing:.04em}
 .gt-f{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
 .gr .gt .live{font-size:10px;white-space:nowrap;padding-inline:6px}
+.gr .gt .live{padding-inline:0 6px}
+@media (max-width:560px){.gr .gt:has(.live) .gt-tag{display:none}}
 .gt-tag{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--me);white-space:nowrap}
 .gls{display:flex;flex-direction:column;gap:2px;min-width:0}
 .gtl{position:relative;display:flex;align-items:center;gap:8px;height:30px;padding-left:10px;min-width:0}
@@ -964,8 +970,9 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 .gs-key{display:flex;gap:16px;margin-bottom:12px;font-size:var(--t-cap);color:var(--muted)}
 .gs-key span{display:inline-flex;align-items:center;gap:6px}
 .gs-key i{width:10px;height:10px;border-radius:50%;border:2px solid var(--me)}.gs-key i.fr{border-color:var(--fg)}
-.gs-sides{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media (max-width:560px){.gs-sides{grid-template-columns:1fr;gap:20px}}
+.gs-sides{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.gs-side{min-width:0}
+@media (max-width:560px){.gs-sides{grid-template-columns:minmax(0,1fr);gap:20px}}
 .gs-sh{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:2px solid var(--border)}
 .gs-side.rt .gs-sh{border-bottom-color:var(--me)}
 .gs-sh .tlogo{width:20px;height:20px}
@@ -983,7 +990,13 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 .gs-av.fr .av{box-shadow:0 0 0 2px var(--card),0 0 0 3.5px var(--fg)}
 .gs-w{flex:1;min-width:0}.gs-w .n{font-size:var(--t-body);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gs-s{font-size:var(--t-cap);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gs-pts{font-family:var(--display);font-weight:800;font-size:var(--d4)}
+.gs-pts{flex:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1;gap:3px;min-width:34px}
+.gs-pts b{font-family:var(--display);font-weight:800;font-size:var(--d4);color:var(--muted)}
+.gs-pts small{font-size:var(--t-mic);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.gs-pts.on b{color:var(--fg)}
+.gs-pts.on.fm b{color:var(--good)}
+.gs-pts.on.fr b{color:var(--bad)}
+.gs-pts.on small{color:var(--fg)}
 .gs-none{font-size:var(--t-sm);color:var(--muted);padding:8px 0}
 .gs-foot{margin-top:16px;font-size:var(--t-sm);color:var(--muted)}
 .brand .wm{display:inline-flex;align-items:center;line-height:1}
@@ -1147,6 +1160,7 @@ function liveOn(){if(!L||!L.games||!L.games.length)return false;const td=todayIS
   return (L.date===td||(L.date===y&&h<6))&&L.games.some(g=>!/^(FUT|PRE)$/.test(g.state||""))}
 function liveTally(){const idx={};P.forEach(p=>{const parts=p.name.split(" "),k1=nkey(parts[0][0]+". "+parts.slice(1).join(" "))+"|"+p.nhl;(idx[k1]=idx[k1]||[]).push(p);idx[nkey(p.name)+"|"+p.nhl]=[p]});
   const T={};(L&&L.games||[]).forEach(gm=>(gm.goals||[]).forEach(go=>{const tm=NHLMAP[go.team]||go.team;const add=(n,f)=>{const c=idx[nkey(n)+"|"+tm];if(c&&c.length===1){const k=c[0].team+"|"+c[0].name;(T[k]=T[k]||{g:0,a:0})[f]++}};add(go.scorer,"g");(go.assists||[]).forEach(a=>add(a,"a"))}));return T}
+function liveTag(lg){const per=lg&&lg.period?("P"+lg.period+(lg.clock?" "+esc(lg.clock):"")).replace(/^P4/,"OT").replace(/^P5/,"SO"):"";return `<span class="live"><b>Live</b>${per?`<em>${per}</em>`:""}</span>`}
 function liveGame(a,h){if(!liveOn())return null;return L.games.find(g=>(NHLMAP[g.away]||g.away)===a&&(NHLMAP[g.home]||g.home)===h)||null}
 function fmtClock(iso){try{return new Date(iso).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}catch(e){return ""}}
 
@@ -1302,10 +1316,10 @@ function today(){
   if(liveOn()){const T=liveTally(),my=mine.map(p=>[p,T[p.team+"|"+p.name]]).filter(x=>x[1]),tot=my.reduce((s,[,v])=>s+v.g+v.a,0);
     const tt=R.teams.filter(x=>x.name!==ME).map(x=>({x,v:x.players.reduce((s,p)=>{const v=T[x.name+"|"+p.name];return s+(v?v.g+v.a:0)},0)})).filter(o=>o.v>0&&(o.x.rank_proj<=4||STARS.has(o.x.name))).sort((a,b)=>b.v-a.v).slice(0,3);
     const anyLive=L.games.some(g=>/LIVE|CRIT/.test(g.state||""));
-    beam=`<div class="beam"><div class="in"><div class="card-h" style="margin:0"><h3 style="display:flex;align-items:center;gap:8px">${anyLive?'<span class="live">Live</span>':""}Tonight so far</h3><b class="num">+${tot} pts</b></div>
+    beam=`<div class="beam"><div class="in"><div class="card-h" style="margin:0"><h3 style="display:flex;align-items:center;gap:8px">${anyLive?'<span class="live"><b>Live</b></span>':""}Tonight so far</h3><b class="num">+${tot} pts</b></div>
       ${my.length?`<ul class="list">${my.map(([p,v])=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${v.g} G · ${v.a} A</div></div></div><b class="num">+${v.g+v.a}</b></li>`).join("")}</ul>`:`<p class="small">None of your players have a point yet tonight.</p>`}
       ${tt.length?`<p class="small">Rivals tonight: ${tt.map(o=>`${esc(o.x.name)} +${o.v}`).join(" · ")}</p>`:""}
-      <p class="small">Updated ${fmtClock(L.updated)}. Live scores refresh about once an hour during games; standings update in the morning.</p></div></div>`}
+      <p class="small">Updated ${fmtClock(L.updated)}. Live scores refresh every few minutes during games; standings update in the morning.</p></div></div>`}
   else if(played.length){beam=`<div class="beam"><div class="in">
       <div class="card-h" style="margin:0"><h3>Last night · ${fmtDay(R.asof)}</h3><b class="num">+${lnPts} pts</b></div>
       <ul class="list">${played.map(p=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${p.last.g} G · ${p.last.a} A</div></div></div><b class="num">${p.last.g+p.last.a?"+"+(p.last.g+p.last.a):"0"}</b></li>`).join("")}</ul>
@@ -1330,7 +1344,7 @@ function today(){
       <div class="tng-h"><div><span class="tng-k">Rooting guide</span><h2>${dayLab}</h2></div>${games.length?`<span class="tng-m"><b>${games.length}</b> game${games.length===1?"":"s"}${(()=>{const m=games.map(x=>{const r=/(\d+):(\d+)\s*(AM|PM)/.exec(x.g.time||"");return r?((+r[1]%12)+(r[3]==="PM"?12:0))*60+ +r[2]:9e9}),i=m.indexOf(Math.min(...m));return m[i]<9e9?` · first puck <b>${esc(games[i].g.time)}</b>`:""})()}</span>`:""}</div>
       ${games.length?`<ul class="grl ${GR_ALL?"all":""}">${games.map((x,i)=>{const pc=x.pick?x.pick.c:null;
         const lg=liveGame(x.g.away,x.g.home),started=lg&&!/^(FUT|PRE)$/.test(lg.state||""),fin=started&&/FINAL|OFF/.test(lg.state);
-        const when=started?(fin?`<span class="gt-f">Final${lg.period>3?(lg.period===4?" OT":" SO"):""}</span>`:`<span class="live">${lg.period?("P"+lg.period+(lg.clock?" "+esc(lg.clock):"")).replace("P4","OT"):"Live"}</span>`):`<span class="gt-t">${esc(x.g.time.replace(/ [AP]M/,""))}<small>${/AM/.test(x.g.time)?"AM":"PM"}</small></span>`;
+        const when=started?(fin?`<span class="gt-f">Final${lg.period>3?(lg.period===4?" OT":" SO"):""}</span>`:`${liveTag(lg)}`):`<span class="gt-t">${esc(x.g.time.replace(/ [AP]M/,""))}<small>${/AM/.test(x.g.time)?"AM":"PM"}</small></span>`;
         const tag=pc&&i<2?`<span class="gt-tag">Big game</span>`:"";
         const faces=sd=>{const all=sd.minep.map(p=>[p,1]).concat(sd.rivp.map(p=>[p,0])),n=4;return all.length?`<span class="gf">${all.slice(0,n).map(([p,m])=>`<span class="${m?"fm":"fr"}" title="${esc(p.name)} (${m?"yours":esc(p.team)})">${av(p,"sm")}</span>`).join("")}${all.length>n?`<span class="more">+${all.length-n}</span>`:""}</span>`:""};
         const line=(c,sd,score)=>`<div class="gtl ${pc===c?"rt":pc?"dim":""}">${tlogo(c,24)}<b>${c}</b><span class="gn">${esc(TEAMN[c]||"")}</span>${started?`<b class="gsc">${score??0}</b>`:""}</div>`;
@@ -1634,11 +1648,11 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
   const verdict=pc?`Your players <b>${mineX.toFixed(1)}</b> pts expected vs rivals <b>${rivX.toFixed(1)}</b>`:inGame.some(isMine)?"Your players are on both sides, so just enjoy it":"None of your players, and no real threats";
   const team=(c,i)=>`<div class="gs-t ${pc===c?"rt":pc?"dim":""}">${pc===c&&!fin?`<span class="gs-root">Root for</span>`:`<span class="gs-root ghost"></span>`}${tlogo(c,56)}<b>${c}</b><span class="gs-n">${esc(TEAMN[c]||"")}</span>${started?`<em>${i?lg.hg??0:lg.ag??0}</em>`:""}</div>`;
   const ring=p=>isMine(p)?"fm":isRiv(p)?"fr":"";
-  const prow=p=>`<li class="tap" data-p="${pkey(p)}"><span class="gs-av ${ring(p)}">${av(p,"sm")}</span><div class="gs-w"><div class="n">${esc(p.name)}</div><div class="gs-s">${isMine(p)?`<b class="gs-me">Yours</b>`:esc(p.team)}${role(p)?" · "+role(p):""}${p.lineup==="injured"?" · injured":p.lineup==="scratched"?" · likely scratch":""}</div></div>${started?`<b class="gs-pts">${tn(p)?"+"+tn(p):"0"}</b>`:""}<svg class="gs-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></li>`;
+  const prow=p=>`<li class="tap" data-p="${pkey(p)}"><span class="gs-av ${ring(p)}">${av(p,"sm")}</span><div class="gs-w"><div class="n">${esc(p.name)}</div><div class="gs-s">${isMine(p)?`<b class="gs-me">Yours</b>`:esc(p.team)}${role(p)?" · "+role(p):""}${p.lineup==="injured"?" · injured":p.lineup==="scratched"?" · likely scratch":""}</div></div>${started?(()=>{const v=T[p.team+"|"+p.name]||{g:0,a:0},n=v.g+v.a;return n?`<span class="gs-pts on ${ring(p)}"><b>+${n}</b><small>${[v.g?v.g+"G":"",v.a?v.a+"A":""].filter(Boolean).join(" ")}</small></span>`:`<span class="gs-pts"><b>0</b><small>pts</small></span>`})():""}<svg class="gs-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></li>`;
   const order=p=>isMine(p)?0:isRiv(p)?1:2;
   const side=c=>{const L=inGame.filter(p=>p.nhl===c).sort((m,n)=>order(m)-order(n)||xp(n)-xp(m));return `<div class="gs-side ${pc===c?"rt":""}"><div class="gs-sh">${tlogo(c,20)}<b>${c}</b><span>${L.length} pool player${L.length===1?"":"s"}</span></div>${L.length?`<ul class="gs-l">${L.map(prow).join("")}</ul>`:`<p class="gs-none">No pool players</p>`}</div>`};
   const sides=pc===g.home?[g.home,g.away]:[g.away,g.home];
-  openSheet(`<div class="gs-eb" style="padding-right:44px">${started?(fin?`<span class="gs-fin">Final${lg.period>3?(lg.period===4?" · OT":" · SO"):""}</span>`:`<span class="live">${lg.period?("P"+lg.period+(lg.clock?" "+esc(lg.clock):"")).replace("P4","OT"):"Live"}</span>`):`${fmtDay(g.date)} · ${esc(g.time)} ET`}</div>
+  openSheet(`<div class="gs-eb" style="padding-right:44px">${started?(fin?`<span class="gs-fin">Final${lg.period>3?(lg.period===4?" · OT":" · SO"):""}</span>`:`${liveTag(lg)}`):`${fmtDay(g.date)} · ${esc(g.time)} ET`}</div>
    <div class="gs-board">${team(g.away,0)}<div class="gs-at">${started?"–":"at"}</div>${team(g.home,1)}</div>
    <div class="gs-v" id="sheet-title"><span class="gs-stake ${pc&&idx<2?"hi":""}">${stake}</span><span>${verdict}</span></div>
    ${started&&lg.goals&&lg.goals.length?`<div class="gs-sec"><h4 class="gs-h">Scoring</h4><ul class="gs-goals">${lg.goals.map(go=>`<li>${tlogo(NHLMAP[go.team]||go.team,18)}<span>${pp(go.scorer)}${go.assists&&go.assists.length?` <span class="gs-a">(${go.assists.map(pp).join(", ")})</span>`:""}</span></li>`).join("")}</ul></div>`:""}
