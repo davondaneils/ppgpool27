@@ -1167,6 +1167,7 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 @media (max-width:560px){.sp-mark{width:48px;height:48px}.sp-wm{font-size:42px}.sp-lock{gap:10px}}
 @media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
+<script>window.APPV="1791515481";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
