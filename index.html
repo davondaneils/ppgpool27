@@ -864,6 +864,19 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.tng-on{display:flex;align-items:center;gap:8px;text-align:left;line-height:1.15}
+.tng-m.tng-on .tng-n{font-family:var(--display);font-weight:800;font-size:40px;line-height:.85;color:var(--me);font-variant-numeric:tabular-nums}
+@media (max-width:560px){.tng-m.tng-on .tng-n{font-size:34px}}
+.tng-m.tng-on .live b{color:var(--red);font-weight:800}
+.tng-m.tng-on>span{font-size:var(--t-lab)!important;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tng-on i{font-style:normal}
+.tng-on .live{font-size:inherit;letter-spacing:inherit}
+.tng-riv{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:-4px 0 14px;font-size:var(--t-sm);color:var(--muted)}
+.tng-riv>span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tng-riv .crest{width:16px;height:16px}
+.tng-riv b{color:var(--fg);font-weight:700;font-variant-numeric:tabular-nums}
+.tng-riv .me b{color:var(--me)}
+.tng-riv .lab{font-size:var(--t-lab);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .pick{position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;transition:opacity .3s,transform .3s}
 .pick.out{opacity:0;transform:scale(1.02)}
 html.picking,html.picking body{overflow:hidden}
@@ -1312,14 +1325,12 @@ function today(){
   const alerts=mine.filter(p=>p.rate>0).map(p=>{const m=p.lineup==="injured"?`Listed injured${p.note&&INJ.test(p.note)?" ("+p.note.split(",")[0]+")":""}`:p.lineup==="scratched"?"Expected to be a healthy scratch":p.lineup==="out"?"Not in the projected lineup":(p.note&&INJ.test(p.note)&&!/history/i.test(p.note)?p.note.split(",")[0]:null);return m?[p,m]:null}).filter(Boolean);
   const C=R.check;const chk=C&&C.checked?(C.diffs&&C.diffs.length?`<span class="chk" style="color:var(--bad)" title="${esc(C.diffs.map(d=>`${d.name}: ours ${d.ours}, NHL.com ${d.nhl}`).join("; "))}">${ico("cross")} ${C.diffs.length} to check</span>`:`<span class="chk" style="color:var(--good)" title="Last night's points for ${C.checked} pool players match NHL.com's official scoresheets.">${ico("check")} Verified</span>`):"";
   TIPS.fresh=`Stats through ${fmtDay(R.asof)}. ${stale.length?`Still catching up on last night's game for: ${stale.map(c=>TEAMN[c]).join(", ")}.`:"All teams up to date."} ${cA}, ${cB}: early on, projections drive the odds and real results take over as games pile up.${C&&C.checked?(C.diffs&&C.diffs.length?` ${C.diffs.length} player${C.diffs.length>1?"s don't":" doesn't"} match NHL.com's scoresheets.`:` Last night's points match NHL.com's official scoresheets.`):""}`;
-  let beam="";
-  if(liveOn()){const T=liveTally(),my=mine.map(p=>[p,T[p.team+"|"+p.name]]).filter(x=>x[1]),tot=my.reduce((s,[,v])=>s+v.g+v.a,0);
-    const tt=R.teams.filter(x=>x.name!==ME).map(x=>({x,v:x.players.reduce((s,p)=>{const v=T[x.name+"|"+p.name];return s+(v?v.g+v.a:0)},0)})).filter(o=>o.v>0&&(o.x.rank_proj<=4||STARS.has(o.x.name))).sort((a,b)=>b.v-a.v).slice(0,3);
-    const anyLive=L.games.some(g=>/LIVE|CRIT/.test(g.state||""));
-    beam=`<div class="beam"><div class="in"><div class="card-h" style="margin:0"><h3 style="display:flex;align-items:center;gap:8px">${anyLive?'<span class="live"><b>Live</b></span>':""}Tonight so far</h3><b class="num">+${tot} pts</b></div>
-      ${my.length?`<ul class="list">${my.map(([p,v])=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${v.g} G · ${v.a} A</div></div></div><b class="num">+${v.g+v.a}</b></li>`).join("")}</ul>`:`<p class="small">None of your players have a point yet tonight.</p>`}
-      ${tt.length?`<p class="small">Rivals tonight: ${tt.map(o=>`${esc(o.x.name)} +${o.v}`).join(" · ")}</p>`:""}
-      <p class="small">Updated ${fmtClock(L.updated)}. Live scores refresh every few minutes during games; standings update in the morning.</p></div></div>`}
+  let beam="",TN=null;
+  if(liveOn()){const T=liveTally(),sum=x=>x.players.reduce((s,p)=>{const v=T[x.name+"|"+p.name];return s+(v?v.g+v.a:0)},0);
+    const thr=(rivals.length?rivals:R.teams.filter(x=>x.name!==ME).sort((a,b)=>b.sim-a.sim).slice(0,3)).slice(0,3);
+    const nLive=L.games.filter(g=>/LIVE|CRIT/.test(g.state||"")).length,nLeft=L.games.filter(g=>/^(FUT|PRE)$/.test(g.state||"")).length;
+    TN={tot:sum(t),nLive,done:!nLive&&!nLeft,riv:thr.map(x=>({n:x.name,v:sum(x)}))}}
+  if(TN){}
   else if(played.length){beam=`<div class="beam"><div class="in">
       <div class="card-h" style="margin:0"><h3>Last night · ${fmtDay(R.asof)}</h3><b class="num">+${lnPts} pts</b></div>
       <ul class="list">${played.map(p=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${p.last.g} G · ${p.last.a} A</div></div></div><b class="num">${p.last.g+p.last.a?"+"+(p.last.g+p.last.a):"0"}</b></li>`).join("")}</ul>
@@ -1341,7 +1352,8 @@ function today(){
   </div>
   <div class="grid">
     <div class="c6 tng band">
-      <div class="tng-h"><div><span class="tng-k">Rooting guide</span><h2>${dayLab}</h2></div>${games.length?`<span class="tng-m"><b>${games.length}</b> game${games.length===1?"":"s"}${(()=>{const m=games.map(x=>{const r=/(\d+):(\d+)\s*(AM|PM)/.exec(x.g.time||"");return r?((+r[1]%12)+(r[3]==="PM"?12:0))*60+ +r[2]:9e9}),i=m.indexOf(Math.min(...m));return m[i]<9e9?` · first puck <b>${esc(games[i].g.time)}</b>`:""})()}</span>`:""}</div>
+      <div class="tng-h"><div><span class="tng-k">Rooting guide</span><h2>${dayLab}</h2></div>${TN&&gday===td?`<span class="tng-m tng-on"><b class="tng-n">+${TN.tot}</b><span>tonight<br><i>${TN.nLive?`<span class="live"><b>${TN.nLive} live</b></span>`:TN.done?"Final":"More to come"}</i></span></span>`:games.length?`<span class="tng-m"><b>${games.length}</b> game${games.length===1?"":"s"}${(()=>{const m=games.map(x=>{const r=/(\d+):(\d+)\s*(AM|PM)/.exec(x.g.time||"");return r?((+r[1]%12)+(r[3]==="PM"?12:0))*60+ +r[2]:9e9}),i=m.indexOf(Math.min(...m));return m[i]<9e9?` · first puck <b>${esc(games[i].g.time)}</b>`:""})()}</span>`:""}</div>
+      ${TN&&gday===td?`<p class="tng-riv"><span class="lab">${rivals.length?"Your rivals":"Threats"}</span>${TN.riv.map(r=>`<span>${crest(r.n,"xs")}${esc(r.n)} <b>+${r.v}</b></span>`).join("")}</p>`:""}
       ${games.length?`<ul class="grl ${GR_ALL?"all":""}">${games.map((x,i)=>{const pc=x.pick?x.pick.c:null;
         const lg=liveGame(x.g.away,x.g.home),started=lg&&!/^(FUT|PRE)$/.test(lg.state||""),fin=started&&/FINAL|OFF/.test(lg.state);
         const when=started?(fin?`<span class="gt-f">Final${lg.period>3?(lg.period===4?" OT":" SO"):""}</span>`:`${liveTag(lg)}`):`<span class="gt-t">${esc(x.g.time.replace(/ [AP]M/,""))}<small>${/AM/.test(x.g.time)?"AM":"PM"}</small></span>`;
