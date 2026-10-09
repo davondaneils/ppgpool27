@@ -864,6 +864,8 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.lvp{font-style:normal;color:var(--red);font-weight:700;white-space:nowrap}
+.lvr{display:block;font-size:var(--t-mic);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
 .tng-on{display:flex;align-items:center;gap:8px;text-align:left;line-height:1.15}
 .tng-m.tng-on .tng-n{font-family:var(--display);font-weight:800;font-size:40px;line-height:.85;color:var(--me);font-variant-numeric:tabular-nums}
 @media (max-width:560px){.tng-m.tng-on .tng-n{font-size:34px}}
@@ -1140,8 +1142,11 @@ function prep(){
   const h=hue(ME);
   document.documentElement.style.setProperty("--meh",h);
   const mc=$("#mecrest");if(mc)mc.innerHTML=crest(ME);
-  
+  applyLive();
 }
+function applyLive(){if(!R)return;R.teams.forEach(t=>{if(t.banked0==null)t.banked0=t.banked;t.live=0});
+  if(typeof L!=="undefined"&&L&&liveOn()&&L.date>R.asof){const T=liveTally();R.teams.forEach(t=>{t.live=t.players.reduce((s,p)=>{const v=T[t.name+"|"+p.name];return s+(v?v.g+v.a:0)},0)})}
+  R.teams.forEach(t=>t.banked=t.banked0+t.live)}
 const meT=()=>R.teams.find(t=>t.name===ME);
 const real=()=>[...R.teams].sort((a,b)=>b.banked-a.banked||a.name.localeCompare(b.name));
 const realRank=t=>1+R.teams.filter(x=>x.banked>t.banked).length;
@@ -1346,7 +1351,7 @@ function today(){
       <p class="hx-note">${(()=>{const tg=Object.values(R.team_gp||{}),avg=tg.length?tg.reduce((a,b)=>a+b,0)/tg.length:0,left=Math.max(0,Math.round((R.season_games||82)-avg));return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4"/></svg><span><span class="lg-only">Projections update</span><span class="sm-only">Updates</span> every morning${left?` · ${left} games left<span class="lg-only"> to make a move</span>`:""}</span>`})()}</p>
       <div class="hx-meta">${(()=>{const pw=pd&&pd.teams[ME]?pd.teams[ME].win:null,mv=pw!=null&&amOdds(pw)!==amOdds(t.win);
         const odds=`<span class="hx-odds" title="Your odds to win the pool${mv?", "+(t.win>pw?"up":"down")+" from "+amOdds(pw)+" yesterday":""}">Odds <b>${amOdds(t.win)}</b>${mv?`<i class="${t.win>pw?"ob-up":"ob-dn"}">${t.win>pw?"▲":"▼"}</i>`:""}</span>`;
-        return `<span><b>${ord(realRank(t))}</b> now</span><span><b>${t.banked}</b> pts</span>${gapNote?`<span>${esc(gapNote.replace(/\.$/,"").replace(/ \(([−+]\d+) since yesterday\)/,(m,d)=>` (${d} today)`))}</span>`:""}`})()}</div>
+        return `<span><b>${ord(realRank(t))}</b> now</span><span><b>${t.banked}</b> pts${t.live?` <i class="lvp">+${t.live} live</i>`:""}</span>${gapNote?`<span>${esc(gapNote.replace(/\.$/,"").replace(/ \(([−+]\d+) since yesterday\)/,(m,d)=>` (${d} today)`))}</span>`:""}`})()}</div>
     </div>
     ${beam?`<div class="hx-side">${beam}</div>`:""}
   </div>
@@ -1386,13 +1391,13 @@ function race(){
   const rowsHTML=order.map(x=>`<div class="srow ${x.name===ME?"me":""}" data-team="${esc(x.name)}">
     <div class="rk">${view==="real"?realLab(x):x.rank_proj}${(view==="real"?realRank(x):x.rank_proj)<=3?`<i class="pod g${view==="real"?realRank(x):x.rank_proj}"></i>`:""}</div>
     <div class="who">${crest(x.name)}<div><div class="n">${esc(x.name)}${youBadge(x.name)}</div><div class="small">${view==="real"?`<span class="hide-sm">Projected </span>${ord(x.rank_proj)}<span class="hide-sm"> · ${Math.round(x.sim)}</span><span class="show-sm"> proj</span>`:`Now ${ord(realRank(x))}<span class="hide-sm"> · range ${x.p10}–${x.p90}</span>`}</div></div></div>
-    <div class="r"><b>${view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span></div>
+    <div class="r"><b>${view==="real"?x.banked:Math.round(x.sim)}</b><span class="u">${view==="real"?"pts":"proj"}</span>${view==="real"&&x.live?`<span class="lvp lvr">+${x.live} live</span>`:""}</div>
     <div class="r">${places(realRank(x)-x.rank_proj)}</div>
     <div class="r h1"><b>${pct(x.win)}</b><div class="bar ${x.name===ME?"me":""}" style="margin-top:4px"><i data-w="${(x.win/maxW*100).toFixed(1)}"></i></div></div>
     <div class="r h2">${starBtn(x.name)}</div></div>`).join("");
   const other=Ts[0].name===ME?Ts[1].name:Ts[0].name;
   $("#race").innerHTML=`
-  <div class="sec-h"><div><h2>${view==="real"?"Standings":"Projected finish"}</h2><p>${view==="real"?`Points banked through ${fmtDate(R.asof)}, same order as the pool app.`:"Where each team is expected to finish."}</p></div>
+  <div class="sec-h"><div><h2>${view==="real"?"Standings":"Projected finish"}</h2><p>${view==="real"?(R.teams.some(x=>x.live)?`Points banked through ${fmtDate(R.asof)}, plus tonight's live points. Final totals lock in the morning.`:`Points banked through ${fmtDate(R.asof)}, same order as the pool app.`):"Where each team is expected to finish."}</p></div>
     <div class="seg" role="radiogroup" aria-label="Standings view"><button role="radio" data-rv="real" aria-checked="${view==="real"}">Real</button><button role="radio" data-rv="proj" aria-checked="${view==="proj"}">Projected</button></div></div>
   <div class="card rise"><div class="srow shead"><div>#</div><div>Team</div><div class="r">${view==="real"?"Pts":"Proj"}</div><div class="r" style="display:flex;justify-content:flex-end;gap:4px"><span class="hide-sm">Outlook</span><span class="show-sm">Move</span> ${q("trend")}</div><div class="r h1" style="display:flex;justify-content:flex-end;gap:4px">Win ${q("win")}</div><div class="r h2"></div></div><div id="srows">${rowsHTML}</div></div>
   <div class="card rise"><div class="card-h"><h3>Standings over time</h3><span class="small">Tap a logo to follow a team</span></div><div id="sotChart"></div></div>
@@ -1757,7 +1762,7 @@ fetch("results.json",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("HTTP
   if(window.__splashDone)window.__splashDone();
   setTab(start,false);if(first){pickTeam();}else celebrate();if(document.fonts)document.fonts.ready.then(movePill);
   if(!first)setTimeout(()=>{if($("#sheet").hidden)overnight()},700);
-  fetch("live.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.games){L=j;if(liveOn()&&!$("#today").hidden){today();unitize($("#today"),false)}}}).catch(()=>{});
+  fetch("live.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.games){L=j;applyLive();if(liveOn()){if(!$("#today").hidden){today();unitize($("#today"),false)}else rerender()}}}).catch(()=>{});
 }).catch(e=>{$("#today").innerHTML=`<div class="card"><p class="err">Couldn't load the pool data (${esc(e.message)}). Refresh the page to try again.</p></div>`;console.error(e)});
 </script>
 
