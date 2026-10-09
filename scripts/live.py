@@ -36,6 +36,9 @@ for g in d.get("games", []):
     clk = g.get("clock", {}) or {}
     goals = []
     for go in g.get("goals", []) or []:
+        # a shootout winner's tally isn't a goal for the scorer, so leave shootout goals out
+        if ((go.get("periodDescriptor") or {}).get("periodType") or "") == "SO":
+            continue
         sc = go.get("name", {}).get("default") if isinstance(go.get("name"), dict) else None
         if not sc:
             fn = (go.get("firstName") or {}).get("default", "")
@@ -45,6 +48,9 @@ for g in d.get("games", []):
             "team": go.get("teamAbbrev", {}).get("default") if isinstance(go.get("teamAbbrev"), dict) else go.get("teamAbbrev"),
             "scorer": sc,
             "assists": [name(a) for a in go.get("assists", []) or []],
+            # NHL.com player ids, so players who share a name and team (two Elias Petterssons) can be told apart
+            "sid": go.get("playerId"),
+            "aid": [a.get("playerId") if isinstance(a, dict) else None for a in go.get("assists", []) or []],
         })
     games.append({
         "away": away.get("abbrev"), "home": home.get("abbrev"),
@@ -55,7 +61,7 @@ for g in d.get("games", []):
     })
 
 active = [g for g in games if g["state"] not in ("FUT", "PRE")]
-out = {"date": day, "updated": now.isoformat(timespec="seconds"), "games": games}
+out = {"date": day, "updated": now.isoformat(timespec="seconds"), "so_free": True, "games": games}
 changed = False
 if active:
     json.dump(out, open("live.json", "w"), separators=(",", ":"))

@@ -1189,7 +1189,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791560258";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791560752";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1298,8 +1298,9 @@ function avgGP(){const g=P.filter(p=>p.gp>0);return g.reduce((s,p)=>s+p.gp,0)/Ma
 function confidence(){const g=avgGP();return g<15?["Early season","low confidence"]:g<45?["Settling in","medium confidence"]:["Late season","high confidence"]}
 function prevDay(){const D=R.daily||[];return D.length>1?D[D.length-2]:null}
 function weekStart(s){const d=new Date(s+"T12:00:00");const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return d.toISOString().slice(0,10)}
-function weekPts(p){const S=p.series||[];if(!S.length)return 0;const ws=weekStart(R.asof);let base=null;for(const r of S){if(r[0]<ws)base=r}return S[S.length-1][1]-(base?base[1]:S[0][1])}
-function weekLabel(){const S=(P.find(p=>p.series&&p.series.length)||{}).series||[];const ws=weekStart(R.asof);return S.some(r=>r[0]<ws)||!S.length?"this week":"since "+fmtDate(S[0][0])}
+function weekPts(p){const ws=weekStart(R.asof);return (p.log||[]).reduce((s,e)=>s+(e[0]>=ws&&e[3]!=null?e[3]+e[4]:0),0)}
+function playedWeek(p){const ws=weekStart(R.asof);return (p.log||[]).some(e=>e[0]>=ws&&e[3]!=null)}
+function weekLabel(){return "this week"}
 function teamWeek(n){const t=R.teams.find(x=>x.name===n);return t?t.players.reduce((s,p)=>s+weekPts(p),0):0}
 function staleTeams(){if(R.check&&Array.isArray(R.check.skipped)&&R.check.date===R.asof)return R.check.skipped;const out=[];const S=R.schedule||[];for(const c in (R.team_gp||{})){const n=S.filter(g=>g.date<=R.asof&&(g.away===c||g.home===c)&&g.ag!=null).length;const playedYday=S.some(g=>g.date===R.asof&&(g.away===c||g.home===c));if(playedYday&&n&&R.team_gp[c]<n)out.push(c)}return out}
 function todayISO(){return new Date().toLocaleDateString("en-CA")}
@@ -1319,8 +1320,12 @@ let L=null;const NHLMAP={VGK:"VEG",LA:"LAK",NJ:"NJD",SJ:"SJS",TB:"TBL"};
 const nkey=n=>String(n||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
 function liveOn(){if(!L||!L.games||!L.games.length)return false;const td=todayISO(),y=new Date(Date.now()-864e5).toLocaleDateString("en-CA"),h=new Date().getHours();
   return (L.date===td||(L.date===y&&h<6))&&L.games.some(g=>!/^(FUT|PRE)$/.test(g.state||""))}
-function liveTally(){const idx={};P.forEach(p=>{const parts=p.name.split(" "),k1=nkey(parts[0][0]+". "+parts.slice(1).join(" "))+"|"+p.nhl;(idx[k1]=idx[k1]||[]).push(p);idx[nkey(p.name)+"|"+p.nhl]=[p]});
-  const T={};(L&&L.games||[]).forEach(gm=>(gm.goals||[]).forEach(go=>{const tm=NHLMAP[go.team]||go.team;const add=(n,f)=>{const c=idx[nkey(n)+"|"+tm];if(c&&c.length===1){const k=c[0].team+"|"+c[0].name;(T[k]=T[k]||{g:0,a:0})[f]++}};add(go.scorer,"g");(go.assists||[]).forEach(a=>add(a,"a"))}));return T}
+// NHL.com player ids for pool players who share a name and team with someone else (two Elias Petterssons on VAN)
+const NHLID={"Elias Pettersson|VAN":8480012};
+// a shootout winner's tally is not a goal for the scorer; feeds that already drop them set so_free
+function liveGoals(gm){const gs=gm.goals||[];if((L&&L.so_free)||!((gm.period||0)>=5&&/^(OFF|FINAL)$/.test(gm.state||"")))return gs;const a=NHLMAP[gm.away]||gm.away,h=NHLMAP[gm.home]||gm.home,win=(gm.ag||0)>(gm.hg||0)?a:h;let i=-1;gs.forEach((go,j)=>{if((NHLMAP[go.team]||go.team)===win)i=j});return gs.filter((_,j)=>j!==i)}
+function liveTally(){const idx={},byId={};P.forEach(p=>{const parts=p.name.split(" "),k1=nkey(parts[0][0]+". "+parts.slice(1).join(" "))+"|"+p.nhl;(idx[k1]=idx[k1]||[]).push(p);idx[nkey(p.name)+"|"+p.nhl]=[p];const id=NHLID[p.name+"|"+p.nhl];if(id)byId[id]=p});
+  const T={};(L&&L.games||[]).forEach(gm=>liveGoals(gm).forEach(go=>{const tm=NHLMAP[go.team]||go.team;const add=(n,id,f)=>{let c=idx[nkey(n)+"|"+tm];if(id!=null)c=byId[id]?[byId[id]]:(c||[]).filter(p=>!NHLID[p.name+"|"+p.nhl]);if(c&&c.length===1){const k=c[0].team+"|"+c[0].name;(T[k]=T[k]||{g:0,a:0})[f]++}};add(go.scorer,go.sid,"g");(go.assists||[]).forEach((a,i)=>add(a,(go.aid||[])[i],"a"))}));return T}
 function liveTag(lg){const per=lg&&lg.period?("P"+lg.period+(lg.clock?" "+esc(lg.clock):"")).replace(/^P4/,"OT").replace(/^P5/,"SO"):"";return `<span class="live"><b>Live</b>${per?`<em>${per}</em>`:""}</span>`}
 function liveNew(){return liveOn()&&L.date>R.asof}
 function liveDate(){return L&&L.date}
@@ -1430,7 +1435,7 @@ function pulseHTML(){const Pz=R.pulse;if(!Pz||!Pz.items||!Pz.items.length)return
   const award=(p,kick,hl,body,val,col)=>{const ph=PIMG[p.team+"|"+p.name];const wm=`<span class="pz-wm pz-wmc">${crest(p.team)}</span>`;
     return `<article class="pz tap aw" role="listitem" data-p="${pkey(p)}"><div class="pz-art">${wm}${ph?`<img class="pz-shot" src="img/p/${ph}.webp" alt="" loading="lazy" decoding="async">`:av(p,"xl")}<div class="pz-stat"><span>Pts this week</span><b style="color:${col}">${val}</b></div></div><div class="pz-body"><span class="pz-k">${kick}</span><h4 class="pz-hl">${esc(hl)}</h4><p class="pz-b">${esc(body)}</p></div><div class="pz-f"><span class="who">${crest(p.team,"xs")}<span>${esc(p.team)}</span></span><em class="badge flat">Weekly award</em></div></article>`};
   const awards=()=>{const steal=[...P].filter(p=>p.round>=8&&weekPts(p)>0).sort((a,b)=>weekPts(b)-weekPts(a)||b.round-a.round)[0];
-    const tfn=[...P].filter(p=>p.gp>0&&weekPts(p)===0&&(p.series||[]).length>1&&p.series[p.series.length-1][1]===p.pts).sort((a,b)=>b.base_rate-a.base_rate)[0];
+    const tfn=[...P].filter(p=>p.gp>0&&weekPts(p)===0&&playedWeek(p)).sort((a,b)=>b.base_rate-a.base_rate)[0];
     return (steal?award(steal,"Steal of the week",`Round ${steal.round} gold: ${lastName(steal)}`,`${weekPts(steal)} points this week from a round ${steal.round} pick. ${steal.team} found value late.`,"+"+weekPts(steal),"var(--good)"):"")
       +(tfn?award(tfn,"Thanks for nothing",`${lastName(tfn)} goes quiet`,`The best player in the pool to go scoreless this week. ${tfn.team} will want a word.`,"0","var(--bad)"):"")};
   const cards=Pz.items.map(it=>{if(it.type==="three_stars")return star(it)+awards();const p=it.player?P.find(x=>x.team===it.team&&x.name===it.player):null;const [cls,lab]=forYou(it);const B=brk(it);
@@ -1741,7 +1746,7 @@ function lAwards(){
   const climb=R.teams.map(t=>({t,d:base&&base.teams[t.name]?base.teams[t.name].rank-t.rank_proj:0})).sort((a,b)=>b.d-a.d)[0];
   const cold=[...P].filter(p=>p.gp>0&&p.base_rate>0.8).sort((a,b)=>a.vs_exp-b.vs_exp)[0];
   const steal=[...P].filter(p=>p.round>=8&&weekPts(p)>0).sort((a,b)=>weekPts(b)-weekPts(a))[0];
-  const tfn=[...P].filter(p=>p.gp>0&&weekPts(p)===0&&(p.series||[]).length>1&&p.series[p.series.length-1][1]===p.pts).sort((a,b)=>b.base_rate-a.base_rate)[0];
+  const tfn=[...P].filter(p=>p.gp>0&&weekPts(p)===0&&playedWeek(p)).sort((a,b)=>b.base_rate-a.base_rate)[0];
   const mvp=[...P].sort((a,b)=>weekPts(b)-weekPts(a)||b.pts-a.pts)[0];
   const wl=weekLabel();const myW=teamWeek(ME),myRank=1+R.teams.filter(t=>teamWeek(t.name)>myW).length,myTie=R.teams.filter(t=>teamWeek(t.name)===myW).length>1;
   const card=(title,desc,body)=>`<div class="card c2"><div class="eyebrow">${title}</div>${body}<p class="small" style="margin-top:8px">${desc}</p></div>`;
