@@ -867,6 +867,7 @@ body:has(footer .fresh-end) #foot{display:none}
 .sot .sot-dash{fill:none;stroke:var(--c);stroke-width:2;stroke-dasharray:4 4;opacity:.9}
 .sot text.sot-lv{fill:var(--red);font-weight:700}
 .lvp{font-style:normal;color:var(--red);font-weight:700;white-space:nowrap}
+.lvt{display:block;font-size:var(--t-mic);letter-spacing:.04em}
 .lvr{display:block;font-size:var(--t-mic);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
 .tng-on{display:flex;align-items:center;gap:8px;text-align:left;line-height:1.15}
 .tng-m.tng-on .tng-n{font-family:var(--display);font-weight:800;font-size:40px;line-height:.85;color:var(--me);font-variant-numeric:tabular-nums}
@@ -1148,7 +1149,12 @@ function prep(){
 }
 function applyLive(){if(!R)return;R.teams.forEach(t=>{if(t.banked0==null)t.banked0=t.banked;t.live=0});
   if(typeof L!=="undefined"&&L&&liveOn()&&L.date>R.asof){const T=liveTally();R.teams.forEach(t=>{t.live=t.players.reduce((s,p)=>{const v=T[t.name+"|"+p.name];return s+(v?v.g+v.a:0)},0)})}
-  R.teams.forEach(t=>t.banked=t.banked0+t.live)}
+  R.teams.forEach(t=>t.banked=t.banked0+t.live);
+  const T2=liveNew()?liveTally():{},st={};if(liveNew())L.games.forEach(g=>{if(!/^(FUT|PRE)$/.test(g.state||"")){st[NHLMAP[g.away]||g.away]=1;st[NHLMAP[g.home]||g.home]=1}});
+  R.teams.forEach(t=>t.players.forEach(p=>{const k=t.name+"|"+p.name,v=T2[k]||{g:0,a:0},q=PK[k];
+    [p,q].forEach(o=>{if(!o)return;if(o.pts0==null){o.pts0=o.pts;o.g0=o.g;o.a0=o.a;o.gp0=o.gp}
+      o.g=o.g0+v.g;o.a=o.a0+v.a;o.pts=o.pts0+v.g+v.a;o.livePts=v.g+v.a;
+      o.gp=o.gp0+(st[o.nhl]&&!/injured|scratched|out/.test(o.lineup||"")?1:0)})}))}
 const meT=()=>R.teams.find(t=>t.name===ME);
 const real=()=>[...R.teams].sort((a,b)=>b.banked-a.banked||a.name.localeCompare(b.name));
 const realRank=t=>1+R.teams.filter(x=>x.banked>t.banked).length;
@@ -1491,7 +1497,7 @@ function mine(){
 function ptable(ps){
   return `<table class="ptab"><thead><tr><th class="l">Player</th><th class="opt">Rd</th><th>GP</th><th class="opt">G</th><th class="opt">A</th><th>PTS</th><th class="opt">TOI</th><th><span style="display:inline-flex;gap:4px;align-items:center">Pace ${q("pace")}</span></th><th>Final</th></tr></thead><tbody>${ps.map(p=>`<tr class="tap" data-p="${pkey(p)}">
    <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}</div>${chips(p)}</div></div></td>
-   <td class="opt">${p.round}</td><td>${p.gp}</td><td class="opt">${p.g}</td><td class="opt">${p.a}</td><td><b>${p.pts}</b></td><td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
+   <td class="opt">${p.round}</td><td>${p.gp}</td><td class="opt">${p.g}</td><td class="opt">${p.a}</td><td><b>${p.pts}</b>${p.livePts?`<i class="lvp lvt">+${p.livePts}</i>`:""}</td><td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
 }
 const IC={bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',cross:'<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6" fill="var(--card)"/><circle cx="15.5" cy="15.5" r="1.6" fill="var(--card)"/><circle cx="12" cy="12" r="1.6" fill="var(--card)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke="var(--card)" stroke-width="2" fill="none"/>',split:'<path d="M6 3v6l6 4 6-4V3M12 13v8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>',minus:'<circle cx="12" cy="12" r="9"/><path d="M7 12h10" stroke="var(--card)" stroke-width="2.4"/>',up:'<path d="M12 4 21 18H3z"/>',check:'<path d="M4 12.5 9.5 18 20 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',down:'<path d="M12 20 3 6h18z"/>',fire:'<path d="M12 2c1 3.2-.6 5-2 6.6C8.6 10.2 7 12 7 14.6A5 5 0 0 0 12 20a5 5 0 0 0 5-5.4c0-2-1-3.6-2-4.6.1 1.6-.6 2.8-1.6 3.2.4-3.6-.6-8.4-1.4-11.2z"/>',snow:'<path d="M11 2h2v4.3l2.6-1.5 1 1.7L13 8.6v2.7l2.3-1.4 3.7-2.1 1 1.7-3.7 2.1L18.6 13l-1 1.7-2.3-1.3L13 14.8v2.6l3.6 2.1-1 1.7-2.6-1.5V22h-2v-2.3l-2.6 1.5-1-1.7 3.6-2.1v-2.6l-2.3 1.4-2.3 1.3-1-1.7 2.3-1.4L3.6 9.8l1-1.7 3.7 2.1L11 11.3V8.6L7.4 6.5l1-1.7L11 6.3z"/>'};
 const ico=k=>`<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none">${IC[k]}</svg>`;
