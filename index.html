@@ -865,6 +865,7 @@ body:has(footer .fresh-end) #foot{display:none}
 /* section headings */
 #today .tng-h,.rbw .tng-h{padding:0 0 var(--head-gap)!important}
 #today .pz-h{margin-bottom:var(--head-gap)}
+.tng-k{white-space:nowrap}
 #today .hcw .hcp-h{margin:0 0 10px!important;gap:8px;align-items:center}
 #today .hcw .hcp-h>div{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 #today .hcw .hcp-h b{font-family:var(--sans);font-style:normal;font-size:var(--t-lab)!important;font-weight:800;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;color:var(--fg)}
@@ -1167,7 +1168,7 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 @media (max-width:560px){.sp-mark{width:48px;height:48px}.sp-wm{font-size:42px}.sp-lock{gap:10px}}
 @media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
-<script>window.APPV="1791540799";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791542341";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1518,7 +1519,7 @@ function today(){
   </div>
   <div class="grid">
     <div class="c6 tng band">
-      <div class="tng-h"><div><span class="tng-k">Rooting guide</span><h2>${dayLab}</h2></div>${TN&&gday===td?`<span class="tng-m tng-on"><b class="tng-n">+${TN.tot}</b><span>tonight<br><i>${TN.nLive?`<span class="live"><b>${TN.nLive} live</b></span>`:TN.done?"Final":"More to come"}</i></span></span>`:games.length?`<span class="tng-m"><b>${games.length}</b> game${games.length===1?"":"s"}${(()=>{const m=games.map(x=>{const r=/(\d+):(\d+)\s*(AM|PM)/.exec(x.g.time||"");return r?((+r[1]%12)+(r[3]==="PM"?12:0))*60+ +r[2]:9e9}),i=m.indexOf(Math.min(...m));return m[i]<9e9?` · first puck <b>${esc(games[i].g.time)}</b>`:""})()}</span>`:""}</div>
+      <div class="tng-h"><div><span class="tng-k">Rooting guide${gday===td?` · <span class="hide-sm">${new Date(td+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"})} </span>${new Date(td+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}`:""}</span><h2>${dayLab}</h2></div>${TN&&gday===td?`<span class="tng-m tng-on"><b class="tng-n">+${TN.tot}</b><span>tonight<br><i>${TN.nLive?`<span class="live"><b>${TN.nLive} live</b></span>`:TN.done?"Final":"More to come"}</i></span></span>`:games.length?`<span class="tng-m"><b>${games.length}</b> game${games.length===1?"":"s"}${(()=>{const m=games.map(x=>{const r=/(\d+):(\d+)\s*(AM|PM)/.exec(x.g.time||"");return r?((+r[1]%12)+(r[3]==="PM"?12:0))*60+ +r[2]:9e9}),i=m.indexOf(Math.min(...m));return m[i]<9e9?` · first puck <b>${esc(games[i].g.time)}</b>`:""})()}</span>`:""}</div>
       ${TN&&gday===td?`<p class="tng-riv"><span class="lab">${rivals.length?"Your rivals":"Threats"}</span>${TN.riv.map(r=>`<span>${crest(r.n,"xs")}${esc(r.n)} <b>+${r.v}</b></span>`).join("")}</p>`:""}
       ${games.length?`<ul class="grl ${GR_ALL?"all":""}">${games.map((x,i)=>{const pc=x.pick?x.pick.c:null;
         const lg=liveGame(x.g.away,x.g.home),started=lg&&!/^(FUT|PRE)$/.test(lg.state||""),fin=started&&/FINAL|OFF/.test(lg.state);
