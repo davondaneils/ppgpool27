@@ -1458,7 +1458,7 @@ function heroLine(t){
     if(wRank<=6)A.push(wRank===1?`Nobody has better title odds than you: <em>${esc(pct(t.win))}</em>.`:`You've got a <em>${esc(pct(t.win))}</em> shot at the title, ${ord(wRank)} best in the pool.`);
     if(below){const g=Math.round(t.sim-below.sim);A.push(g<=10?`${esc(below.name)} is right behind you, <em>${pts(g)}</em> back in the projections.`:`You've got a <em>${g}-point</em> cushion on ${esc(below.name)} in the projections.`)}
     if(Math.abs(rr-t.rank_proj)>=3)A.push(rr>t.rank_proj?`${ord(rr)} today, but projected <em>${ord(t.rank_proj)}</em>. ${phase==="early"?"The early standings won't last.":"The best is still ahead."}`:`${ord(rr)} today, projected <em>${ord(t.rank_proj)}</em>. You've banked a head start.`);
-    if(ros<=5)A.push(ros===1?`Your roster has the <em>most points left to score</em> of any team.`:`Your roster has the <em>${ord(ros)}-most</em> points left to score in the pool.`);
+    if(ros<=4)A.push(ros===1?`From here on, you're projected to <em>outscore every team</em> in the pool.`:ros===2?`From here on, only <em>one team</em> is projected to outscore you.`:`From here on, only <em>${ros-1} teams</em> are projected to outscore you.`);
   }
   const day=Math.round(new Date(R.asof+"T12:00:00").getTime()/864e5);
   return A[((day%A.length)+A.length)%A.length]}
