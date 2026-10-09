@@ -40,7 +40,8 @@ Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselec
 
 **`results.json`** (public; the only data file in this repo). Main keys:
 - `asof`, `season_games`, `team_gp`
-- `teams[]`: `name`, `banked` (points so far), `ros` (projected rest of season), `sim` (projected final), `p10`/`p90`, `win` and `top3` (odds), `rank_proj`, `rank_now`, `rank_ros`, `players[]` (season stats, rate, availability, line and power-play unit, notes and injury details, `log`, `last`)
+- `teams[]`: `name`, `banked` (points so far), `ros` (projected rest of season), `sim` (projected final), `p10`/`p90`, `win` and `top3` (odds), `rank_proj`, `rank_now`, `rank_ros`, `players[]` (season stats, rate, availability, line and power-play unit, notes and injury details, `susp`, `log`, `last`)
+  - `susp` (optional): `{games, from_gp, reason, source}`, set by hand in the private inputs file when a pool player is suspended. `from_gp` is his NHL team's games played when the suspension started; the app counts games left from `team_gp`, shows a Suspended tag and the reason, and `model.py` leaves those games out of his projection. Remove it once he's back
 - `daily[]`: one snapshot per morning (rank, banked points and odds per team). It powers the Race tab's "Move" column (places moved since the previous update, or since puck drop during games), the hero's weekly comparisons and the standings chart
 - `pulse`: `{asof, items[]}`, today's Pool Pulse cards. Item fields: `type`, `polarity` (`up`, `down` or `neutral`), `team`, `player`, `kicker`, `stat`, `headline`, `body`, and optionally `label` (the small word above the stat; the app falls back to a per-type default, then "Pool") and `breaking`
 - `records`, `schedule`, `check`, `bridge`, `recap`, `lens`, `recap_archive`, `history`
