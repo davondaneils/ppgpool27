@@ -1167,7 +1167,7 @@ body:has(#today:not([hidden])) footer{margin-top:0;padding-top:16px}
 @media (max-width:560px){.sp-mark{width:48px;height:48px}.sp-wm{font-size:42px}.sp-lock{gap:10px}}
 @media (prefers-reduced-motion:reduce){.splash *{animation-duration:.01s!important;animation-delay:0s!important}}
 </style>
-<script>window.APPV="1791516796";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791540799";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1642,8 +1642,8 @@ function mine(){
   $("#mine").innerHTML=`
   <div class="sec-h"><div class="who">${crest(t.name,"lg")}<div><h2>${esc(t.name)}</h2><p>${lead.name===t.name?`Projected to win it by ${Math.round(gap)} points.`:`Projected ${Math.round(gap)} points back of ${esc(lead.name)} for 1st.`}</p></div></div></div>
   <div class="kp card rise">${[["Projected finish",ord(t.rank_proj),`${Math.round(t.sim)} pts · likely ${t.p10}–${t.p90}`,"proj","hi"],["Win odds",pct(t.win),`Top 3: ${pct(t.top3)}`,"win",""],["Real standing",ord(realRank(t)),`${t.banked} points banked`,"",""],["Strength from here",ord(t.rank_ros),`${Math.round(t.ros)} pts to come`,"strength",""]].map(([k,v,s,tp,c])=>`<div class="kc ${c}"><div class="kk">${k}${tp?" "+q(tp):""}</div><div class="kpv">${String(v).replace(/(\d)(st|nd|rd|th|%)$/,"$1<small>$2</small>")}</div><div class="ks">${s}</div></div>`).join("")}</div>
-  <div class="card rise"><div class="card-h"><h3>Head to head</h3><select id="h2h" aria-label="Opponent">${opps.map(x=>`<option ${x.name===opp.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div><div id="h2hbox"></div></div>
-  <div class="card rise"><div class="card-h"><h3>Roster</h3><div class="seg seg-sm" role="radiogroup" aria-label="Sort roster">${RSORT.map(([k,l])=>`<button role="radio" data-rs="${k}" aria-checked="${rs===k}">${l}</button>`).join("")}</div></div><div class="tw" id="rostTw">${ptable(sortRoster(ps,rs))}</div><p class="small" style="margin-top:8px">Tap a player for details.</p></div>`;
+  <div class="card rise"><div class="card-h"><h3>Roster</h3><div class="seg seg-sm" role="radiogroup" aria-label="Sort roster">${RSORT.map(([k,l])=>`<button role="radio" data-rs="${k}" aria-checked="${rs===k}">${l}</button>`).join("")}</div></div><div class="tw" id="rostTw">${ptable(sortRoster(ps,rs))}</div><p class="small" style="margin-top:8px">Tap a player for details.</p></div>
+  <div class="card rise"><div class="card-h"><h3>Head to head</h3><select id="h2h" aria-label="Opponent">${opps.map(x=>`<option ${x.name===opp.name?"selected":""}>${esc(x.name)}</option>`).join("")}</select></div><div id="h2hbox"></div></div>`;
   headToHead(opp);
   $("#h2h").onchange=e=>{store.set("pool.h2h",e.target.value);headToHead(R.teams.find(x=>x.name===e.target.value))};
 }
