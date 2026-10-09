@@ -1,0 +1,36 @@
+name: Live watch
+
+# Stays up through game nights and redeploys the site whenever scores change (see scripts/live_watch.py).
+# Start times are added once approved; only one watcher runs at a time, and a start that finds games
+# far off exits right away.
+on:
+  workflow_dispatch:
+    inputs:
+      kick:
+        description: "Just redeploy the site once"
+        type: boolean
+        default: false
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: live-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Watch tonight's games
+        run: python scripts/live_watch.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          KICK: ${{ inputs.kick }}
