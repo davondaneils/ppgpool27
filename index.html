@@ -510,7 +510,7 @@ ul.lens li::marker{color:var(--me)}
 
 @media (prefers-reduced-motion:no-preference){.rise{animation:rise .45s cubic-bezier(.2,.8,.2,1) both}@keyframes rise{from{transform:translateY(8px)}to{transform:none}}}
 footer{margin-top:28px;font-size:12px;color:var(--muted);display:flex;flex-wrap:nowrap;gap:8px 16px;align-items:center;white-space:nowrap}
-footer #howbtn2{padding:10px 0;flex:none}
+footer #howbtn2,footer #rulesbtn{padding:10px 0;flex:none}
 footer #tourbtn{margin-left:auto;padding:10px 0;flex:none;color:var(--muted)}
 footer #foot{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .err{color:var(--bad)}
@@ -1198,7 +1198,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791561280";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791562519";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1231,7 +1231,7 @@ footer .ft-s{display:none}
   <section id="league" hidden></section>
   <section id="recap" hidden></section>
 
-  <footer><span id="foot"></span><button class="cta" id="tourbtn" type="button" aria-label="App tour"><span class="ft-l">App tour</span><span class="ft-s">Tour</span></button><button class="cta" id="howbtn2">How the odds work</button></footer>
+  <footer><span id="foot"></span><button class="cta" id="tourbtn" type="button" aria-label="App tour"><span class="ft-l">App tour</span><span class="ft-s">Tour</span></button><button class="cta" id="rulesbtn" type="button">Rules</button><button class="cta" id="howbtn2" aria-label="How the odds work"><span class="ft-l">How the odds work</span><span class="ft-s">Odds</span></button></footer>
 </div>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -1355,7 +1355,7 @@ function tickerHTML(alerts){const it=[],td=todayISO(),S=R.schedule||[];
   const tg=R.team_gp||{},gps=Object.values(tg),avg=gps.length?gps.reduce((a,b)=>a+b,0)/gps.length:0,SG=R.season_games||82;
   // injuries first: yours, then threats
   alerts.forEach(([p,m])=>it.push(`<span class="tk tap" data-p="${pkey(p)}"><b class="bad">Injury</b>${esc(lastName(p))} (${esc(p.nhl)}): ${esc(m.replace(/^Listed /,"").replace("Expected to be a healthy scratch","healthy scratch").replace("Not in the projected lineup","not in the lineup"))}</span>`));
-  const me=meT();R.teams.filter(t=>t.name!==ME&&(t.rank_proj<=3||STARS.has(t.name))).forEach(t=>t.players.filter(p=>p.lineup==="injured"&&p.rate>=0.7).forEach(p=>it.push(`<span class="tk tap" data-p="${pkey(p)}"><b>Rival injury</b>${esc(lastName(p))} out for ${esc(t.name)}</span>`)));
+  const me=meT();R.teams.filter(t=>t.name!==ME&&(t.rank_proj<=3||STARS.has(t.name))).forEach(t=>t.players.filter(p=>p.lineup==="injured"&&p.rate>=0.7).forEach(p=>{const sl=suspLeft(p);it.push(sl?`<span class="tk tap" data-p="${pkey(p)}"><b>Rival suspension</b>${esc(lastName(p))} out ${sl} more game${sl>1?"s":""} for ${esc(t.name)}</span>`:`<span class="tk tap" data-p="${pkey(p)}"><b>Rival injury</b>${esc(lastName(p))} out for ${esc(t.name)}</span>`)}));
   // week ahead: player-games over the next 7 days
   const end=addDays(td,6),wk=S.filter(g=>g.date>=td&&g.date<=end);
   if(wk.length){const cnt=t=>t.players.filter(p=>p.lineup!=="injured"&&p.rate>0).reduce((s,p)=>s+wk.filter(g=>g.away===p.nhl||g.home===p.nhl).length,0);
@@ -1532,7 +1532,7 @@ function today(){
   const miles=[];played.forEach(p=>{const pts=p.pts,prev=pts-p.last.g-p.last.a;if(p.last.g>0&&p.g===p.last.g)miles.push([p,"First goal of the season"]);[10,20,25,30,40,50,60,70,75,80,90,100].forEach(m=>{if(prev<m&&pts>=m)miles.push([p,`Reached ${m} points`])});if(p.last.g>=3)miles.push([p,"Hat trick"]);else if(p.last.g+p.last.a>=3)miles.push([p,`${p.last.g+p.last.a}-point night`])});
   const rivals=[...STARS].map(n=>R.teams.find(x=>x.name===n)).filter(Boolean);
   const dayLab=gday===td?"Tonight":fmtDay(gday);
-  const alerts=mine.filter(p=>p.rate>0).map(p=>{const m=p.lineup==="injured"?`Listed injured${p.note&&INJ.test(p.note)?" ("+p.note.split(",")[0]+")":""}`:p.lineup==="scratched"?"Expected to be a healthy scratch":p.lineup==="out"?"Not in the projected lineup":(p.note&&INJ.test(p.note)&&!/history/i.test(p.note)?p.note.split(",")[0]:null);return m?[p,m]:null}).filter(Boolean);
+  const alerts=mine.filter(p=>p.rate>0).map(p=>{const sl=suspLeft(p),m=sl?`Suspended, ${gamesLeft(sl)}`:p.lineup==="injured"?`Listed injured${p.note&&INJ.test(p.note)?" ("+p.note.split(",")[0]+")":""}`:p.lineup==="scratched"?"Expected to be a healthy scratch":p.lineup==="out"?"Not in the projected lineup":(p.note&&INJ.test(p.note)&&!/history/i.test(p.note)?p.note.split(",")[0]:null);return m?[p,m]:null}).filter(Boolean);
   const C=R.check;const chk=C&&C.checked?(C.diffs&&C.diffs.length?`<span class="chk" style="color:var(--bad)" title="${esc(C.diffs.map(d=>`${d.name}: ours ${d.ours}, NHL.com ${d.nhl}`).join("; "))}">${ico("cross")} ${C.diffs.length} to check</span>`:`<span class="chk" style="color:var(--good)" title="Last night's points for ${C.checked} pool players match NHL.com's official scoresheets.">${ico("check")} <span class="vt">Verified</span></span>`):"";
   TIPS.fresh=`Stats through ${fmtDay(R.asof)}. ${stale.length?`Still catching up on last night's game for: ${stale.map(c=>TEAMN[c]).join(", ")}.`:"All teams up to date."} ${cA}, ${cB}: early on, projections drive the odds and real results take over as games pile up.${C&&C.checked?(C.diffs&&C.diffs.length?` ${C.diffs.length} player${C.diffs.length>1?"s don't":" doesn't"} match NHL.com's scoresheets.`:` Last night's points match NHL.com's official scoresheets.`):""}`;
   let beam="",TN=null;
@@ -1697,13 +1697,16 @@ function ptable(ps){
    <td class="l"><div class="who">${av(p)}<div><div class="n">${esc(p.name)}${p.pos==="D"?' <span class="small">D</span>':""}${tonightTag(p)}</div>${chips(p)}</div></div></td>
    <td class="opt">${p.round}</td><td>${p.gp}</td><td class="opt">${p.g}</td><td class="opt">${p.a}</td><td><b>${p.pts}</b>${p.livePts?`<i class="lvp lvt">+${p.livePts}</i>`:""}</td><td class="opt">${mmss(p.toi)}</td><td>${trend(p.vs_exp)}</td><td><b>${Math.round(p.final)}</b></td></tr>`).join("")}</tbody></table>`;
 }
-const IC={bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',cross:'<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6" fill="var(--card)"/><circle cx="15.5" cy="15.5" r="1.6" fill="var(--card)"/><circle cx="12" cy="12" r="1.6" fill="var(--card)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke="var(--card)" stroke-width="2" fill="none"/>',split:'<path d="M6 3v6l6 4 6-4V3M12 13v8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>',minus:'<circle cx="12" cy="12" r="9"/><path d="M7 12h10" stroke="var(--card)" stroke-width="2.4"/>',up:'<path d="M12 4 21 18H3z"/>',check:'<path d="M4 12.5 9.5 18 20 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',down:'<path d="M12 20 3 6h18z"/>',fire:'<path d="M12 2c1 3.2-.6 5-2 6.6C8.6 10.2 7 12 7 14.6A5 5 0 0 0 12 20a5 5 0 0 0 5-5.4c0-2-1-3.6-2-4.6.1 1.6-.6 2.8-1.6 3.2.4-3.6-.6-8.4-1.4-11.2z"/>',snow:'<path d="M11 2h2v4.3l2.6-1.5 1 1.7L13 8.6v2.7l2.3-1.4 3.7-2.1 1 1.7-3.7 2.1L18.6 13l-1 1.7-2.3-1.3L13 14.8v2.6l3.6 2.1-1 1.7-2.6-1.5V22h-2v-2.3l-2.6 1.5-1-1.7 3.6-2.1v-2.6l-2.3 1.4-2.3 1.3-1-1.7 2.3-1.4L3.6 9.8l1-1.7 3.7 2.1L11 11.3V8.6L7.4 6.5l1-1.7L11 6.3z"/>'};
+const IC={susp:'<circle cx="12" cy="12" r="9.5"/><path d="M12 6.8v6.4" stroke="var(--card)" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.5" fill="var(--card)"/>',bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',cross:'<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/>',dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.6" fill="var(--card)"/><circle cx="15.5" cy="15.5" r="1.6" fill="var(--card)"/><circle cx="12" cy="12" r="1.6" fill="var(--card)"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke="var(--card)" stroke-width="2" fill="none"/>',split:'<path d="M6 3v6l6 4 6-4V3M12 13v8" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/>',minus:'<circle cx="12" cy="12" r="9"/><path d="M7 12h10" stroke="var(--card)" stroke-width="2.4"/>',up:'<path d="M12 4 21 18H3z"/>',check:'<path d="M4 12.5 9.5 18 20 6" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',down:'<path d="M12 20 3 6h18z"/>',fire:'<path d="M12 2c1 3.2-.6 5-2 6.6C8.6 10.2 7 12 7 14.6A5 5 0 0 0 12 20a5 5 0 0 0 5-5.4c0-2-1-3.6-2-4.6.1 1.6-.6 2.8-1.6 3.2.4-3.6-.6-8.4-1.4-11.2z"/>',snow:'<path d="M11 2h2v4.3l2.6-1.5 1 1.7L13 8.6v2.7l2.3-1.4 3.7-2.1 1 1.7-3.7 2.1L18.6 13l-1 1.7-2.3-1.3L13 14.8v2.6l3.6 2.1-1 1.7-2.6-1.5V22h-2v-2.3l-2.6 1.5-1-1.7 3.6-2.1v-2.6l-2.3 1.4-2.3 1.3-1-1.7 2.3-1.4L3.6 9.8l1-1.7 3.7 2.1L11 11.3V8.6L7.4 6.5l1-1.7L11 6.3z"/>'};
 const ico=k=>`<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex:none">${IC[k]}</svg>`;
+function suspLeft(p){const s=p&&p.susp;if(!s||!s.games)return 0;const gp=(R.team_gp||{})[p.nhl];return gp==null?s.games:Math.max(0,s.games-(gp-(s.from_gp||0)))}
+function suspBack(p){const n=suspLeft(p);if(!n)return null;return (R.schedule||[]).filter(x=>x.date>R.asof&&(x.away===p.nhl||x.home===p.nhl))[n]||null}
+const gamesLeft=n=>`${n} game${n>1?"s":""} left`;
 function tagIcon(l,t){return /^PP|power/i.test(l)?"bolt":/shoot|luck|heat up|cool off/i.test(l)?"dice":/minute|ice time|TOI/i.test(l)?"clock":/disagree/i.test(l)?"split":/scratch|not in|lineup/i.test(l)?"minus":/injur|IR|lower|upper|day-to-day|out/i.test(l)?"cross":t==="good"?"up":t==="bad"?"down":null}
 const RELABEL={"Unlucky shooting":"Due to heat up","Lucky shooting":"Due to cool off"};
 function strk(p){const L=(p.log||[]).filter(l=>l[3]!=null);let h=0,c=0;for(let i=L.length-1;i>=0;i--){const v=L[i][3]+L[i][4];if(v>0){if(c)break;h++}else{if(h)break;c++}}return {hot:h,cold:c}}
 function strkChip(p){const S=strk(p);return S.hot>=4?`<span class="badge hot">${ico("fire")}${S.hot}-game point streak</span>`:S.cold>=4&&p.rate>=0.6&&p.lineup!=="injured"?`<span class="badge cold">${ico("snow")}Pointless in ${S.cold}</span>`:""}
-function chips(p,max=3,noInj){const F=[];if(!noInj&&p.note&&INJ.test(p.note))F.push(`<span class="badge down">${ico("cross")}${esc(p.note.split(",")[0])}</span>`);const sc=strkChip(p);if(sc)F.push(sc);
+function chips(p,max=3,noInj){const F=[];const sl=suspLeft(p);if(sl)F.push(`<span class="badge down">${ico("susp")}Suspended · ${gamesLeft(sl)}</span>`);if(!noInj&&!sl&&p.note&&INJ.test(p.note))F.push(`<span class="badge down">${ico("cross")}${esc(p.note.split(",")[0])}</span>`);const sc=strkChip(p);if(sc)F.push(sc);
   (p.flags||[]).filter(f=>!/^Line|^Pair/.test(f[1])).forEach(([t,l])=>{l=RELABEL[l]||l;const k=tagIcon(l,t);F.push(`<span class="badge ${t==="good"?"up":t==="bad"?"down":""}">${k?ico(k):""}${esc(l)}</span>`)});
   return F.length?`<div class="chips">${F.slice(0,max).join("")}</div>`:""}
 function whatIf(){
@@ -1826,7 +1829,9 @@ $("#scrim").onclick=closeSheet;
 function spark(pts,fmt,label){const vals=pts.map(p=>p[1]).filter(v=>v!=null);if(!vals.length)return "";const W=520,H=110,L=52,Rt=10,B=26,n=pts.length;let lo=Math.min(...vals),hi=Math.max(...vals);if(hi===lo){hi+=1;lo=Math.max(0,lo-1)}
   const x=i=>n===1?(L+W-Rt)/2:L+(W-L-Rt)*i/(n-1),y=v=>6+(H-6-B)*(1-(v-lo)/(hi-lo));const pp=pts.map((p,i)=>p[1]==null?null:[x(i),y(p[1])]).filter(Boolean);
   return `<svg class="spk" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(label)}"><line x1="${L}" x2="${W-Rt}" y1="${H-B}" y2="${H-B}" stroke="var(--border)"/>${pp.length>1?`<polyline class="draw" pathLength="1" fill="none" stroke="var(--me)" stroke-width="2.5" stroke-linejoin="round" points="${pp.map(p=>p.join(",")).join(" ")}"/>`:""}${pp.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--me)"/>`).join("")}<text x="${L-6}" y="${y(hi)+4}" text-anchor="end">${fmt(hi)}</text><text x="${L-6}" y="${y(lo)+4}" text-anchor="end">${fmt(lo)}</text><text x="${n>1?L:x(0)}" y="${H-5}" text-anchor="${n>1?"start":"middle"}">${fmtDate(pts[0][0])}</text>${n>1?`<text x="${W-Rt+4}" y="${H-5}" text-anchor="end">${fmtDate(pts[n-1][0])}</text>`:""}</svg>`}
-function statusBox(p){const hurt=p.lineup==="injured"||(p.note&&INJ.test(p.note)&&!/history/i.test(p.note)),out=p.lineup==="scratched"||p.lineup==="out";if(!hurt&&!out)return "";
+function statusBox(p){const sl=suspLeft(p);if(sl){const s=p.susp,bk=suspBack(p);
+  return `<div class="status"><div class="sh">${ico("susp")} Suspended · ${gamesLeft(sl)}</div><p>Serving a ${s.games}-game suspension${s.reason?" for "+esc(s.reason):""}.${bk?` Eligible to return ${fmtDate(bk.date)} ${bk.home===p.nhl?"vs":"at"} the ${esc(TEAMN[bk.home===p.nhl?bk.away:bk.home]||"")}.`:""}</p>${s.games-sl?`<p class="small">${s.games-sl} of ${s.games} games served.</p>`:""}</div>`}
+  const hurt=p.lineup==="injured"||(p.note&&INJ.test(p.note)&&!/history/i.test(p.note)),out=p.lineup==="scratched"||p.lineup==="out";if(!hurt&&!out)return "";
   const head=hurt?`Injured${p.note&&INJ.test(p.note)?" · "+esc(p.note.split(",")[0]):""}`:p.lineup==="scratched"?"Expected to be a healthy scratch":"Not in the projected lineup";
   const body=p.inj_detail?esc(p.inj_detail):hurt?(p.note?esc(p.note)+".":"Listed on the injury report."):p.lineup==="scratched"?"Daily Faceoff lists him among the extras for his team's next game.":"He doesn't appear on his team's projected lines for the next game.";
   const ba=p.base_avail||p.avail,lost=p.avail<ba?Math.round(p.ros*(ba/p.avail-1)):0;
@@ -1873,7 +1878,7 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
   const verdict=pc?`Your players <b>${mineX.toFixed(1)}</b> pts expected vs rivals <b>${rivX.toFixed(1)}</b>`:inGame.some(isMine)?"Your players are on both sides, so just enjoy it":"None of your players, and no real threats";
   const team=(c,i)=>`<div class="gs-t ${pc===c?"rt":pc?"dim":""}">${pc===c&&!fin?`<span class="gs-root">Root for</span>`:`<span class="gs-root ghost"></span>`}${tlogo(c,56)}<b>${c}</b><span class="gs-n">${esc(TEAMN[c]||"")}</span>${started?`<em>${i?lg.hg??0:lg.ag??0}</em>`:""}</div>`;
   const ring=p=>isMine(p)?"fm":isRiv(p)?"fr":"";
-  const prow=p=>`<li class="tap" data-p="${pkey(p)}"><span class="gs-av ${ring(p)}">${av(p,"sm")}</span><div class="gs-w"><div class="n">${esc(p.name)}</div><div class="gs-s">${isMine(p)?`<b class="gs-me">Yours</b>`:esc(p.team)}${role(p)?" · "+role(p):""}${p.lineup==="injured"?" · injured":p.lineup==="scratched"?" · likely scratch":""}</div></div>${started?(()=>{const v=T[p.team+"|"+p.name]||{g:0,a:0},n=v.g+v.a;return n?`<span class="gs-pts on ${ring(p)}"><b>+${n}</b><small>${[v.g?v.g+"G":"",v.a?v.a+"A":""].filter(Boolean).join(" ")}</small></span>`:`<span class="gs-pts"><b>0</b><small>pts</small></span>`})():""}<svg class="gs-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></li>`;
+  const prow=p=>`<li class="tap" data-p="${pkey(p)}"><span class="gs-av ${ring(p)}">${av(p,"sm")}</span><div class="gs-w"><div class="n">${esc(p.name)}</div><div class="gs-s">${isMine(p)?`<b class="gs-me">Yours</b>`:esc(p.team)}${role(p)?" · "+role(p):""}${suspLeft(p)?" · suspended":p.lineup==="injured"?" · injured":p.lineup==="scratched"?" · likely scratch":""}</div></div>${started?(()=>{const v=T[p.team+"|"+p.name]||{g:0,a:0},n=v.g+v.a;return n?`<span class="gs-pts on ${ring(p)}"><b>+${n}</b><small>${[v.g?v.g+"G":"",v.a?v.a+"A":""].filter(Boolean).join(" ")}</small></span>`:`<span class="gs-pts"><b>0</b><small>pts</small></span>`})():""}<svg class="gs-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></li>`;
   const order=p=>isMine(p)?0:isRiv(p)?1:2;
   const side=c=>{const L=inGame.filter(p=>p.nhl===c).sort((m,n)=>order(m)-order(n)||xp(n)-xp(m));return `<div class="gs-side ${pc===c?"rt":""}"><div class="gs-sh">${tlogo(c,20)}<b>${c}</b><span>${L.length} pool player${L.length===1?"":"s"}</span></div>${L.length?`<ul class="gs-l">${L.map(prow).join("")}</ul>`:`<p class="gs-none">No pool players</p>`}</div>`};
   const sides=pc===g.home?[g.home,g.away]:[g.away,g.home];
@@ -1883,6 +1888,13 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
    ${started&&lg.goals&&lg.goals.length?`<div class="gs-sec"><h4 class="gs-h">Scoring</h4><ul class="gs-goals">${lg.goals.map(go=>`<li>${tlogo(NHLMAP[go.team]||go.team,18)}<span>${pp(go.scorer)}${go.assists&&go.assists.length?` <span class="gs-a">(${go.assists.map(pp).join(", ")})</span>`:""}</span></li>`).join("")}</ul></div>`:""}
    <div class="gs-sec"><div class="gs-key"><span><i class="fm"></i>Yours</span><span><i class="fr"></i>Threat</span><span class="gs-tip">Tap a player for details</span></div><div class="gs-sides">${sides.map(side).join("")}</div></div>
    ${started?`<p class="gs-foot">Live scores update about once an hour.</p>`:""}`);SHEETG=key}
+function rulesSheet(){openSheet(`<h3 id="sheet-title" style="font-size:18px;padding-right:44px">Pool rules</h3>
+ <div class="stack" style="gap:10px;margin-top:12px;font-size:14px">
+ <p><b>The teams.</b> ${R.teams.length} teams each drafted 12 skaters before the season.</p>
+ <p><b>Scoring.</b> Every goal and every assist your players get is a point for your team. Only the NHL regular season counts.</p>
+ <p><b>Shootouts.</b> Shootout goals don't count, because the NHL doesn't credit them as goals. Overtime goals count like any other.</p>
+ <p><b>Rosters are locked.</b> No trades, pickups or swaps all season. Injured and suspended players stay on your roster and score nothing while they're out.</p>
+ </div>`)}
 function howSheet(){openSheet(`<h3 id="sheet-title" style="font-size:18px;padding-right:44px">How the odds work</h3>
  <div class="stack" style="gap:10px;margin-top:12px;font-size:14px">
  <p><b>Starting point.</b> Each player starts from two projections weighted equally: his points per game over recent seasons, and NHL.com's published projection. NHL.com's numbers run about ${Math.round(((R.ext_scale||1)-1)*100)}% high across the pool, so they're scaled down to match.</p>
@@ -2029,7 +2041,7 @@ document.addEventListener("click",e=>{
   const lv=e.target.closest("[data-lv]");if(lv){store.set("pool.leagueView",lv.dataset.lv);league();return}
   const ln=e.target.closest("[data-lens]");if(ln){store.set("pool.lens",ln.dataset.lens);recap();return}
 });
-$("#howbtn2").onclick=howSheet;
+$("#howbtn2").onclick=howSheet;$("#rulesbtn").onclick=rulesSheet;
 let rz;addEventListener("resize",()=>{movePill();clearTimeout(rz);rz=setTimeout(()=>{if(R&&!$("#race").hidden){drawStand();drawOdds();drawRace();drawDist()}},150)});
 
 
