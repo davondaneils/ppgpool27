@@ -2,6 +2,7 @@
 
 Usage (from the repo root):
     python3 tools/build_site.py PATH/TO/app/index.html
+    python3 tools/build_site.py --bare SITE/index.html OUT.html   (the reverse, see below)
 
 Pass the app page as the artifact holds it. Both forms work:
   - the page as an Artifact read returns it (wrapped in the artifact host's <html>/<head> skeleton), or
@@ -11,6 +12,9 @@ Passing the built website index.html is refused, so it can't be wrapped twice.
 The script makes the link-preview image URLs absolute (so group-chat previews work), wraps the page in
 a full document, adds a version stamp so copies people already have open reload themselves after a
 deploy, and writes index.html and version.json in the repo root. Nothing else in the repo is touched.
+
+--bare turns a built website page (say, a preview branch's index.html) back into the app page the artifact
+holds, so whoever promotes a preview can publish exactly what was approved to the artifact.
 """
 import sys
 import time
@@ -64,7 +68,27 @@ def site_document(bare, version=None):
             + s[:cut] + "\n" + refresh + "</head>\n<body>" + s[cut:] + "\n</body>\n</html>\n")
 
 
+def unbuild(site):
+    """Return the bare app page that site_document() wrapped."""
+    if "window.APPV=" not in site:
+        raise SystemExit("That isn't a built website page.")
+    head_start = site.index("<title>")
+    head_end = site.index("<script>window.APPV=")
+    body = site.index("<body>", head_end) + len("<body>")
+    end = site.rindex("\n</body>")
+    s = site[head_start:head_end].rstrip("\n") + site[body:end]
+    for old, new in [(f'<meta property="og:image" content="{SITE}og.png">\n<meta property="og:url" content="{SITE}">',
+                      '<meta property="og:image" content="og.png">'),
+                     (f'<meta name="twitter:image" content="{SITE}og.png">', '<meta name="twitter:image" content="og.png">')]:
+        s = s.replace(old, new, 1)
+    return s
+
+
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "--bare":
+        Path(sys.argv[3]).write_text(unbuild(Path(sys.argv[2]).read_text(encoding="utf-8")), encoding="utf-8")
+        print(f"app page written to {sys.argv[3]}")
+        return
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     bare = bare_page(Path(sys.argv[1]).read_text(encoding="utf-8"))

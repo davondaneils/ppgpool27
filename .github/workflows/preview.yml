@@ -1,0 +1,23 @@
+name: Preview
+
+# A push to (or deletion of) a preview/<name> branch redeploys the site from main, which picks up
+# every preview branch at https://ppgpool.com/preview/<name>/. Only main may deploy to Pages, so this
+# starts the Site workflow on main instead of deploying from the preview branch itself.
+on:
+  push:
+    branches: ["preview/**"]
+  delete:
+
+permissions:
+  actions: write
+
+jobs:
+  redeploy:
+    if: github.event_name == 'push' || (github.event.ref_type == 'branch' && startsWith(github.event.ref, 'preview/'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy the site with previews
+        run: gh workflow run site.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

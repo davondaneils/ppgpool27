@@ -13,6 +13,7 @@ PPGPool27 is a companion app for a 16-team NHL points pool (12 skaters per team;
 | The app (source of truth) | A private Claude artifact owned by Davon, file `index.html` (the link is in his skill) | One HTML page, vanilla JS, no build step. The artifact host wraps it in its own `<html>`/`<head>` skeleton |
 | Data and pipeline scripts | Same artifact | `results.json` (what the app reads), the private inputs file, the four pipeline scripts (`prep`, `model`, `check`, `pulse`, stored as .txt), `live.json`, headshots in `img/p/`, NHL logos in `img/t/`, `icons/`, `manifest.webmanifest`, `og.png` |
 | The public website | This repo, served by GitHub Pages at https://ppgpool.com/ (custom domain set in Settings › Pages, DNS at Namecheap; the old github.io link redirects) | A built copy of the app plus `results.json`. This is the link members use |
+| Previews | `preview/<name>` branches, served at https://ppgpool.com/preview/<name>/ | Where every change is checked before it goes live. See "Shipping a change" |
 | Pool team crests | A separate Claude design artifact, "Pool Team Logos" | In the app they're inline SVGs in the `LOGO` map, with team colours in `BRANDC` and hues in `BRANDH` |
 | Morning refresh | Claude scheduled task "Pool Odds daily refresh", 4:52 AM Toronto, daily | Takes about 8 to 10 minutes, so new data lands around 5 AM. Its prompt holds the full step list |
 | Live scores (artifact) | Claude scheduled task "Pool Odds live scores", at :05 past 4, 6, 8, 9, 10 and 11 PM and midnight, Toronto | Writes `live.json` to the artifact only |
@@ -64,16 +65,28 @@ Personal links: `https://ppgpool.com/?team=<slug>` preselects a team on someone'
 
 ## Shipping a change
 
+**Nothing goes live without Davon's OK.** Every app change goes to a preview first, Davon looks at it on his phone, and only after he explicitly approves it does it go to the artifact and to ppgpool.com. The one exception is a data-only fix he explicitly asks to go live right away.
+
+**How previews work.** Any branch named `preview/<name>` (lowercase letters, digits and dashes) is served at `https://ppgpool.com/preview/<name>/`. Pushing to it starts `.github/workflows/preview.yml`, which redeploys the site from main; `scripts/stage_site.py` puts main at the root and each preview branch under `/preview/`. A preview:
+- shows today's real data (its `results.json` and `live.json` are always main's, so it only differs in the app itself) and stays current with every morning and game-night deploy;
+- has a small red PREVIEW tab at the top and "Preview <name>" in the page title, and is kept out of search results (`robots.txt` and a noindex tag); members won't find it unless someone shares the link;
+- keeps its saved settings apart from the live app's. The first visit copies your team, rivals, theme and onboarding from the live app; after that nothing a preview saves (seen recaps, the splash, tab choice) touches the live app. So one-time things like the last night recap show again on a preview without using up the live one.
+- `/preview/<name>/?team=<slug>` works as usual on a device that has never opened the app.
+
+**Steps for an app change:**
 1. **Read before you write.** Get the current page with the Artifact tool: `read` on the artifact's URL without a `path` (a read with `path` doesn't count as having seen the latest version, and the publish gets refused). The read comes back wrapped in the host's skeleton; both tools below accept that as is. The scheduled tasks republish the artifact daily and on game nights, so never work from an old copy.
 2. **Edit**, then syntax-check the scripts: pull out the `<script>` blocks and run `node --check` on them.
-3. **Preview**, from the repo root:
+3. **Check it locally**, from the repo root:
    `python3 tools/preview.py edited.html --compare original.html`
    It screenshots every tab at 390 and 1280 px (light and dark) into `preview-shots/` and flags anything poking past the screen edge, console errors and missing files. With `--compare`, flags the page already had are marked "(already there)", so you only chase what your change introduced. Add `--widths 375,390,1280` for layout work, `--themes light,dark,toggle` when you touch dark-mode CSS, `--live some-live.json` for game-night views and `--fresh` for the first-visit flow. Then look at the shots, phone first.
-4. **Publish to the artifact**: Artifact `publish` with `url` set to the artifact link and `file_path` set to your edited page. Pass other files only if you changed them (files left out are kept). If the publish reports a conflict, merge your change into the newer version it hands back and publish again.
-5. **Publish to the website**: `git pull --rebase` first (it refuses to run with uncommitted changes), then `python3 tools/build_site.py edited.html`, stage only `index.html` and `version.json`, commit as `davondaneils` with a short plain message, and push. The push redeploys the site, and the new `version.json` makes copies people already have open reload themselves.
-6. **Confirm the deploy**: `gh api "repos/davondaneils/ppgpool27/actions/runs?per_page=4"` shows the run for your commit and whether it succeeded (run logs and the Pages settings aren't reachable from Claude). ppgpool.com and github.io aren't reachable from the sandbox. A new deploy can take a minute or two to show on phones.
-7. **Data-only fixes**: publish the changed `results.json` (and the private inputs file, if changed) to the artifact, copy `results.json` into this repo, commit and push.
-8. **Pipeline script changes**: edit the script, publish it to the artifact as `data/<name>.txt`. The next morning run picks it up.
+4. **Push a preview.** Start the branch from the latest main: `git fetch origin main && git checkout -B preview/<name> origin/main`, then `python3 tools/build_site.py edited.html`, stage only `index.html` and `version.json`, commit as `davondaneils` and `git push -u origin preview/<name>`. Tweaks are more commits on the same branch (an open preview reloads itself after each one). Confirm the Preview run and the Site run after it succeeded (step 7), then send Davon `https://ppgpool.com/preview/<name>/`. Do not publish to the artifact or push to main yet.
+5. **Promote, only after Davon approves.** Turn the approved preview back into the artifact page: `python3 tools/build_site.py --bare index.html approved.html` (from the preview branch's checkout). Re-read the artifact without a `path`; if its page changed since you started (a scheduled task or another thread), merge your change into the newer page instead. Publish to the artifact with `url` and `file_path` (pass other files only if you changed them; on a conflict, merge into the newer version it hands back and publish again).
+6. **Then the website**: `git checkout main && git pull --rebase`, `python3 tools/build_site.py approved.html`, stage only `index.html` and `version.json`, commit as `davondaneils` with a short plain message, push, and delete the preview branch (`git push origin --delete preview/<name>`), which also takes its page down. The push redeploys the site, and the new `version.json` makes copies people already have open reload themselves.
+7. **Confirm the deploy**: `gh api "repos/davondaneils/ppgpool27/actions/runs?per_page=4"` shows the runs and whether they succeeded (run logs and the Pages settings aren't reachable from Claude). ppgpool.com and github.io aren't reachable from the sandbox. A new deploy can take a minute or two to show on phones.
+8. **Data-only fixes**: preview them the same way when there's time (a preview always shows main's data, so preview the app change that reads the new data, or describe the fix). When Davon explicitly says to put a data fix live now, publish the changed `results.json` (and the private inputs file, if changed) to the artifact, copy `results.json` into this repo, commit and push to main.
+9. **Pipeline script changes** (the artifact's `data/*.txt`) run unattended every morning, so describe the change to Davon and get his OK before publishing the script to the artifact. The next morning run picks it up.
+
+Several previews can be up at once, one branch each. Delete a preview branch once its change is live or dropped.
 
 Getting push access in a new Claude session: add the repo with the `add_repo` tool (owner `davondaneils`, repo `ppgpool27`, access `push`), then clone it. Reading this file only needs `curl -s https://raw.githubusercontent.com/davondaneils/ppgpool27/main/PROJECT.md`.
 
@@ -112,8 +125,10 @@ version.json            build stamp that makes open copies reload
 results.json            morning data (pushed by the daily refresh)
 manifest.webmanifest, icons/, og.png, img/   app icons, link preview, headshots, NHL logos
 scripts/live.py         game-night scores for the website
+scripts/stage_site.py   assembles what Pages serves: main at the root, preview/<name> branches under /preview/
 .github/workflows/site.yml   deploy on push + every 10 minutes on game nights
-tools/build_site.py     artifact page -> site index.html + version.json
+.github/workflows/preview.yml   redeploys the site when a preview/<name> branch is pushed or deleted
+tools/build_site.py     artifact page -> site index.html + version.json (--bare goes back the other way)
 tools/preview.py        local screenshots and layout checks
 PROJECT.md              this file
 ```
