@@ -345,6 +345,7 @@ body:has(#today:not([hidden])) #foot{display:none}
 .ts-f img{height:80px;width:80px;max-width:none;flex:none;object-fit:contain;object-position:50% 100%;display:block}
 .ts-f .av,.ts-f .crest{margin-bottom:16px;flex:none}
 .ts-f:first-child img{height:104px;width:104px}
+.ts-f .crest.lg{position:static;transform:none;width:56px;height:56px;margin-bottom:12px;border-radius:13px}.ts-f:first-child .crest.lg{width:72px;height:72px;margin-bottom:10px;border-radius:16px}
 .ts-n{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-family:var(--display);font-weight:800;font-size:13px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--fg);color:var(--card);z-index:1}
 .ts-f:first-child .ts-n{background:var(--red);color:#fff}
 .ts-l{list-style:none;margin:8px 0 0;padding:0}
@@ -1506,9 +1507,12 @@ function pulseHTML(){const Pz=R.pulse;if(!Pz||!Pz.items||!Pz.items.length)return
     const threat=t.rank_proj<=3||STARS.has(t.name)||t.sim>=me.sim-15;return threat?(up?["down","Bad for you"]:["up","Good for you"]):["flat","No threat"]};
   const LAB={big_night:"Pts last night",new_leader:"1st place",odds_swing:"Win odds",proj_mover:"Projected",real_mover:"Standings",injury:"Status"};
   const brk=it=>{if(it.breaking)return true;if(it.type==="new_leader")return true;if(it.type==="odds_swing"){const m=String(it.stat||"").match(/(\d+(?:\.\d+)?)%.*?(\d+(?:\.\d+)?)%/);if(m&&Math.abs(+m[2]-+m[1])>=4)return true}return false};
-  const star=it=>{const S=(it.stars||[]).slice(0,3);const fig=(x,i)=>{const p=x.player?P.find(y=>y.team===x.team&&y.name===x.player):null,ph=p&&PIMG[p.team+"|"+p.name];return `<div class="ts-f"><span class="ts-n">${i+1}</span>${ph?`<img src="img/p/${ph}.webp" alt="" loading="lazy">`:p?av(p,"lg"):crest(x.team,"lg")}</div>`};
-    const row=(x,i)=>{const p=x.player?P.find(y=>y.team===x.team&&y.name===x.player):null;return `<li ${p?`class="tap" data-p="${pkey(p)}"`:""}><span class="ts-k">${["1st","2nd","3rd"][i]}</span><span class="ts-w">${esc(p?lastName(p):x.team)}</span><b>${esc(x.stat||"")}</b></li>`};
-    return `<article class="pz ts" role="listitem"><div class="pz-art ts-art">${S.map(fig).join("")}</div><div class="pz-body"><span class="pz-k">${esc(it.kicker||"Three Stars")}</span><h4 class="pz-hl">${esc(it.headline||"Three stars of the week")}</h4><ul class="ts-l">${S.map(row).join("")}</ul></div><div class="pz-f"><span class="who">${esc(it.week||"This week")}</span><span class="ts-st" aria-hidden="true">★★★</span></div></article>`};
+  const star=it=>{const end=R.asof,st=new Date(end+"T12:00:00");st.setDate(st.getDate()-6);const from=st.toISOString().slice(0,10);
+    const wk=t=>t.players.reduce((s,p)=>s+(p.log||[]).reduce((a,e)=>a+(e[0]>=from&&e[0]<=end&&e[3]!=null?e[3]+e[4]:0),0),0);
+    const S=R.teams.map(t=>({team:t.name,pts:wk(t)})).sort((a,b)=>b.pts-a.pts||a.team.localeCompare(b.team)).slice(0,3);if(!S.length||!S[0].pts)return "";
+    const fig=(x,i)=>`<div class="ts-f"><span class="ts-n">${i+1}</span>${crest(x.team,"lg")}</div>`;
+    const row=(x,i)=>`<li><span class="ts-k">${["1st","2nd","3rd"][i]}</span><span class="ts-w">${esc(x.team)}</span><b>+${x.pts} pts</b></li>`;
+    return `<article class="pz ts" role="listitem"><div class="pz-art ts-art">${S.map(fig).join("")}</div><div class="pz-body"><span class="pz-k">Three Stars</span><h4 class="pz-hl">${esc(S[0].team)} win the week</h4><ul class="ts-l">${S.map(row).join("")}</ul></div><div class="pz-f"><span class="who">${esc(it.week||"This week")}</span><span class="ts-st" aria-hidden="true">★★★</span></div></article>`};
   const award=(p,kick,hl,body,val,col)=>{const ph=PIMG[p.team+"|"+p.name];const wm=`<span class="pz-wm pz-wmc">${crest(p.team)}</span>`;
     return `<article class="pz tap aw" role="listitem" data-p="${pkey(p)}"><div class="pz-art">${wm}${ph?`<img class="pz-shot" src="img/p/${ph}.webp" alt="" loading="lazy" decoding="async">`:av(p,"xl")}<div class="pz-stat"><span>Pts this week</span><b style="color:${col}">${val}</b></div></div><div class="pz-body"><span class="pz-k">${kick}</span><h4 class="pz-hl">${esc(hl)}</h4><p class="pz-b">${esc(body)}</p></div><div class="pz-f"><span class="who">${crest(p.team,"xs")}<span>${esc(p.team)}</span></span><em class="badge flat">Weekly award</em></div></article>`};
   const awards=()=>{const steal=[...P].filter(p=>p.round>=8&&weekPts(p)>0).sort((a,b)=>weekPts(b)-weekPts(a)||b.round-a.round)[0];
