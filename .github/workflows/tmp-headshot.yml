@@ -1,0 +1,19 @@
+name: Temp headshot fetch
+on:
+  push:
+    branches: [tmp-headshot]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p tmp
+          curl -fsSL -o tmp/8476448.png https://assets.nhle.com/mugs/nhl/20262027/VGK/8476448.png
+          git config user.name davondaneils
+          git config user.email davondaneils@gmail.com
+          git add tmp/8476448.png
+          git commit -m "tmp headshot"
+          git push
