@@ -737,6 +737,17 @@ footer #foot{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .hx-meta .hodds{margin-left:auto}
 .hx-side{position:relative;width:340px}
 .hx-side .beam>.in{background:var(--card)}
+.ln-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-4px -6px -4px 0}
+.ln-k{font-size:var(--t-lab,10.5px);font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--me)}
+.ln-x{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;padding:0}
+.ln-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+@media (hover:hover){.ln-x:hover{background:var(--card-2);color:var(--fg)}}
+.ln-sum{display:flex;align-items:center;gap:12px}
+.ln-n{font-family:var(--display);font-weight:800;font-size:var(--fig,44px);line-height:.85;color:var(--me);font-variant-numeric:tabular-nums}
+.ln-sum span{font-size:var(--t-sm,12.5px);color:var(--muted);line-height:1.35}
+.ln-sum i{font-style:normal;font-weight:600;color:var(--fg)}
+.ln-sum i.ln-up{color:var(--good)}.ln-sum i.ln-dn{color:var(--bad)}
+.hx-side.ln-out{opacity:0;transform:translateY(-6px);transition:opacity .2s,transform .2s}
 #today>.ticker:first-child+.hx{margin-top:-16px;border-top:0}
 @media (max-width:820px){
   .hx{grid-template-columns:1fr;padding:20px 16px 22px;gap:18px}
@@ -1210,7 +1221,7 @@ footer .ft-s{display:none}
 @media (max-width:680px){.pz-ed i{display:none}.pz-ed.lv{flex-direction:column;align-items:flex-end;gap:3px;line-height:1}}
 @media (min-width:375px) and (max-width:560px){.pz-h .pz-lock{height:clamp(20px,5.4vw,25px)!important}}
 </style>
-<script>window.APPV="1791682248";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791682898";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -1319,6 +1330,9 @@ const realLab=t=>(R.teams.filter(x=>x.banked===t.banked).length>1?"T":"")+realRa
 function avgGP(){const g=P.filter(p=>p.gp>0);return g.reduce((s,p)=>s+p.gp,0)/Math.max(1,g.length)}
 function confidence(){const g=avgGP();return g<15?["Early season","low confidence"]:g<45?["Settling in","medium confidence"]:["Late season","high confidence"]}
 function prevDay(){const D=R.daily||[];return D.length>1?D[D.length-2]:null}
+/* Last night recap: shows on the first open after a game night, then stays gone (per device, per team, keyed to the game date) */
+const LN_ON={};function lnShow(){if(store.get("pool.me",null)==null)return false;const k=ME+"|"+R.asof;if(k in LN_ON)return LN_ON[k];const sk="pool.ln."+ME;if(store.get(sk,null)===R.asof)return LN_ON[k]=false;store.set(sk,R.asof);return LN_ON[k]=true}
+document.addEventListener("click",e=>{if(!e.target.closest(".ln-x"))return;e.stopPropagation();LN_ON[ME+"|"+R.asof]=false;const s=$("#today .hx-side"),h=$("#today .hx");if(!s)return;const done=()=>{s.remove();h&&h.classList.add("solo")};if(RM)done();else{s.classList.add("ln-out");setTimeout(done,220)}},true);
 function weekStart(s){const d=new Date(s+"T12:00:00");const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return d.toISOString().slice(0,10)}
 function weekPts(p){const ws=weekStart(R.asof);return (p.log||[]).reduce((s,e)=>s+(e[0]>=ws&&e[3]!=null?e[3]+e[4]:0),0)}
 function playedWeek(p){const ws=weekStart(R.asof);return (p.log||[]).some(e=>e[0]>=ws&&e[3]!=null)}
@@ -1611,9 +1625,13 @@ function today(){
     const nLive=L.games.filter(g=>/LIVE|CRIT/.test(g.state||"")).length,nLeft=L.games.filter(g=>/^(FUT|PRE)$/.test(g.state||"")).length;
     TN={tot:sum(t),nLive,done:!nLive&&!nLeft,riv:thr.map(x=>({n:x.name,v:sum(x)}))}}
   if(TN){}
-  else if(played.length){beam=`<div class="beam"><div class="in">
-      <div class="card-h" style="margin:0"><h3>Last night · ${fmtDay(R.asof)}</h3><b class="num">+${lnPts} pts</b></div>
-      <ul class="list">${played.map(p=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${p.last.g} G · ${p.last.a} A</div></div></div><b class="num">${p.last.g+p.last.a?"+"+(p.last.g+p.last.a):"0"}</b></li>`).join("")}</ul>
+  else if(played.length&&lnShow()){const sc=played.filter(p=>p.last.g+p.last.a).sort((a,b)=>(b.last.g+b.last.a)-(a.last.g+a.last.a)||b.last.g-a.last.g);
+    const pv=[...(R.daily||[])].reverse().find(d=>d.asof<R.asof),was=pv&&pv.teams[ME]?pv.teams[ME].rank_now:null,rr=realRank(t),dr=was?was-rr:0;
+    const mv=!was?"":dr>0?`<i class="ln-up">▲ Up ${dr} to ${ord(rr)}</i>`:dr<0?`<i class="ln-dn">▼ Down ${-dr} to ${ord(rr)}</i>`:`<i>Still ${ord(rr)}</i>`;
+    beam=`<div class="beam ln"><div class="in">
+      <div class="ln-h"><span class="ln-k">Last night · ${fmtDay(R.asof)}</span><button type="button" class="ln-x" aria-label="Hide last night's recap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <div class="ln-sum"><b class="ln-n">+${lnPts}</b><span>point${lnPts===1?"":"s"} for you${mv?`<br>${mv}`:""}</span></div>
+      ${sc.length?`<ul class="list">${sc.map(p=>`<li class="tap" data-p="${pkey(p)}"><div class="who">${av(p,"sm")}<div><div class="n">${esc(p.name)}</div><div class="small">${p.last.g} G · ${p.last.a} A</div></div></div><b class="num">+${p.last.g+p.last.a}</b></li>`).join("")}</ul>`:""}
       <button class="cta" data-go="race">See the standings →</button></div></div>`}
   $("#today").innerHTML=`
   ${tickerHTML(alerts)}
