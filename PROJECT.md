@@ -64,6 +64,8 @@ Personal links: `https://ppgpool.com/?team=<slug>` preselects a team on someone'
 
 ## Shipping a change
 
+**Screenshots first, nothing ships without Davon's OK.** The app is live, so after step 3 send Davon the phone screenshots (desktop too when it matters) of the change and wait for his explicit approval before publishing anywhere. Tweaks get new screenshots. The one exception is a data-only fix he explicitly asks to go live right away.
+
 1. **Read before you write.** Get the current page with the Artifact tool: `read` on the artifact's URL without a `path` (a read with `path` doesn't count as having seen the latest version, and the publish gets refused). The read comes back wrapped in the host's skeleton; both tools below accept that as is. The scheduled tasks republish the artifact daily and on game nights, so never work from an old copy.
 2. **Edit**, then syntax-check the scripts: pull out the `<script>` blocks and run `node --check` on them.
 3. **Preview**, from the repo root:
