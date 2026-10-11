@@ -86,7 +86,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 - **Escape everything** that goes into HTML with `esc()`, including numbers like "<1%".
 - **Shadowed names.** `drawStand()` has a local `L` (a margin) that hides the global live data `L`; use `liveNew()` / `liveDate()` there.
 - **Fonts in sandboxes.** Google Fonts is usually blocked, so local screenshots need the real fonts from npm: `tools/preview.py` fetches Barlow Condensed and Inter into `tools/.fonts`. Measure fit with them loaded; fallback fonts have different widths.
-- **Jersey numbers** are a static `NUM` map in the page (keyed `team|name`, like `PIMG`), taken from NHL.com rosters on Oct 10. A new pool player or a number change needs an entry there, or the player sheet simply leaves the number out. Players without a headshot fall back to initials (William Karlsson, added Oct 10, has none yet).
+- **Jersey numbers** are a static `NUM` map in the page (keyed `team|name`, like `PIMG`), taken from NHL.com rosters on Oct 10. A new pool player or a number change needs an entry there, or the player sheet simply leaves the number out. Players without a headshot fall back to initials.
 - **This repo is public.** Never commit the private inputs file, the pipeline scripts, the artifact's links or anything from the private notes. `.gitignore` blocks the obvious file names as a safety net.
 
 ## Open items (as of Oct 9, 2026)
