@@ -67,7 +67,7 @@ if active:
     json.dump(out, open("live.json", "w"), separators=(",", ":"))
     # Only redeploy when something actually changed since the last deploy.
     try:
-        prev = get("https://davondaneils.github.io/ppgpool27/live.json")
+        prev = get("https://ppgpool.com/live.json")
         changed = prev.get("date") != day or prev.get("games") != games
     except Exception:
         changed = True

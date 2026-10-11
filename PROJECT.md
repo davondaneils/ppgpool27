@@ -12,14 +12,14 @@ PPGPool27 is a companion app for a 16-team NHL points pool (12 skaters per team;
 |---|---|---|
 | The app (source of truth) | A private Claude artifact owned by Davon, file `index.html` (the link is in his skill) | One HTML page, vanilla JS, no build step. The artifact host wraps it in its own `<html>`/`<head>` skeleton |
 | Data and pipeline scripts | Same artifact | `results.json` (what the app reads), the private inputs file, the four pipeline scripts (`prep`, `model`, `check`, `pulse`, stored as .txt), `live.json`, headshots in `img/p/`, NHL logos in `img/t/`, `icons/`, `manifest.webmanifest`, `og.png` |
-| The public website | This repo, served by GitHub Pages at https://davondaneils.github.io/ppgpool27/ | A built copy of the app plus `results.json`. This is the link members use |
+| The public website | This repo, served by GitHub Pages at https://ppgpool.com/ (custom domain set in Settings › Pages, DNS at Namecheap; the old github.io link redirects) | A built copy of the app plus `results.json`. This is the link members use |
 | Pool team crests | A separate Claude design artifact, "Pool Team Logos" | In the app they're inline SVGs in the `LOGO` map, with team colours in `BRANDC` and hues in `BRANDH` |
 | Morning refresh | Claude scheduled task "Pool Odds daily refresh", 4:52 AM Toronto, daily | Takes about 8 to 10 minutes, so new data lands around 5 AM. Its prompt holds the full step list |
 | Live scores (artifact) | Claude scheduled task "Pool Odds live scores", at :05 past 4, 6, 8, 9, 10 and 11 PM and midnight, Toronto | Writes `live.json` to the artifact only |
 | Live scores (website) | `.github/workflows/site.yml` + `scripts/live.py` | Asks for every 10 minutes on game nights; fetches NHL.com scores into `live.json` and redeploys only when something changed. See Open items: GitHub rarely runs it on time |
 | Live watcher (website) | `.github/workflows/live.yml` + `scripts/live_watch.py` | Stays up through a game night, checks NHL.com every 2 minutes and starts the Site workflow after every change (and every 8 minutes for the clock while games are live). Starts every 15 to 30 minutes from 6:40 to 10:10 PM Toronto, plus hourly 12:40 to 5:40 PM on weekends (approved Oct 9; treat these times like a scheduled-task schedule); `kick` just redeploys once |
 
-Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselects a team on someone's first visit. The slug is the team name lowercased, `&` turned into `and`, and every other run of non-alphanumeric characters turned into `-` (for example `lord-of-the-rinks`, `debits-and-checks`, `matthew-s-team`). `?tour` replays the onboarding.
+Personal links: `https://ppgpool.com/?team=<slug>` preselects a team on someone's first visit. The slug is the team name lowercased, `&` turned into `and`, and every other run of non-alphanumeric characters turned into `-` (for example `lord-of-the-rinks`, `debits-and-checks`, `matthew-s-team`). `?tour` replays the onboarding.
 
 ## How a day works
 
@@ -70,7 +70,7 @@ Personal links: `https://davondaneils.github.io/ppgpool27/?team=<slug>` preselec
    It screenshots every tab at 390 and 1280 px (light and dark) into `preview-shots/` and flags anything poking past the screen edge, console errors and missing files. With `--compare`, flags the page already had are marked "(already there)", so you only chase what your change introduced. Add `--widths 375,390,1280` for layout work, `--themes light,dark,toggle` when you touch dark-mode CSS, `--live some-live.json` for game-night views and `--fresh` for the first-visit flow. Then look at the shots, phone first.
 4. **Publish to the artifact**: Artifact `publish` with `url` set to the artifact link and `file_path` set to your edited page. Pass other files only if you changed them (files left out are kept). If the publish reports a conflict, merge your change into the newer version it hands back and publish again.
 5. **Publish to the website**: `git pull --rebase` first (it refuses to run with uncommitted changes), then `python3 tools/build_site.py edited.html`, stage only `index.html` and `version.json`, commit as `davondaneils` with a short plain message, and push. The push redeploys the site, and the new `version.json` makes copies people already have open reload themselves.
-6. **Confirm the deploy**: `gh api "repos/davondaneils/ppgpool27/actions/runs?per_page=4"` shows the run for your commit and whether it succeeded (run logs and the Pages settings aren't reachable from Claude). github.io itself isn't reachable from the sandbox. A new deploy can take a minute or two to show on phones.
+6. **Confirm the deploy**: `gh api "repos/davondaneils/ppgpool27/actions/runs?per_page=4"` shows the run for your commit and whether it succeeded (run logs and the Pages settings aren't reachable from Claude). ppgpool.com and github.io aren't reachable from the sandbox. A new deploy can take a minute or two to show on phones.
 7. **Data-only fixes**: publish the changed `results.json` (and the private inputs file, if changed) to the artifact, copy `results.json` into this repo, commit and push.
 8. **Pipeline script changes**: edit the script, publish it to the artifact as `data/<name>.txt`. The next morning run picks it up.
 
@@ -78,7 +78,7 @@ Getting push access in a new Claude session: add the repo with the `add_repo` to
 
 ## Gotchas
 
-- **Network.** The cloud shell can't reach Hockey-Reference, DailyFaceoff, the NHL API or github.io; use WebFetch for those. GitHub itself (git, `gh api`, raw.githubusercontent.com) works.
+- **Network.** The cloud shell can't reach Hockey-Reference, DailyFaceoff, the NHL API or the site itself; use WebFetch for those. GitHub itself (git, `gh api`, raw.githubusercontent.com) works.
 - **No sideways scrolling, ever.** Full-width bands size to `--vw` (the page's client width), not `100vw`, and the page clips horizontal overflow. So anything too wide gets silently cut off instead of scrolling. That's why `tools/preview.py` checks for it.
 - **CSS class collisions.** It's one big stylesheet and short class names collide (`.bar`, `.big`, `.h2`, `.gt` and `.kv` all bit). Prefix new classes per component (`.pz-*` Pulse, `.hx-*` hero, `.tng-*` Tonight, `.gr` game tiles, `.gs-*` game sheet) and grep before adding one: some prefixes are shared (`.ob-*` is used by onboarding, the hero's odds arrows and old odds-board code).
 - **Dark mode is defined twice**: under `@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) ...}` (device setting) and under `:root[data-theme="dark"] ...` (the in-app toggle). Every new dark rule goes in both.

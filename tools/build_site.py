@@ -16,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-SITE = "https://davondaneils.github.io/ppgpool27/"
+SITE = "https://ppgpool.com/"
 ROOT = Path(__file__).resolve().parent.parent
 
 

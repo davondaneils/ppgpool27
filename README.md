@@ -2,7 +2,7 @@
 
 Companion app for the PPG NHL pool: standings, odds, the Pool Pulse and tonight's rooting guide.
 
-Live at https://davondaneils.github.io/ppgpool27/
+Live at https://ppgpool.com/
 
 `results.json` is refreshed automatically each morning, and live scores during games (current status in PROJECT.md).
 
