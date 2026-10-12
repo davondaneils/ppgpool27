@@ -10,8 +10,9 @@ on:
     - cron: "10,25,40,55 23 * * *"
     - cron: "10,40 0 * * *"
     - cron: "10 1,2 * * *"
-    # Weekend matinees, about 12:40 to 5:40 PM Toronto
-    - cron: "40 16-21 * * 0,6"
+    # Matinees (weekends and holidays), about 12:40 to 5:40 PM Toronto. Runs daily; it exits
+    # right away when no game starts within 75 minutes. Daily since Oct 12 (Davon approved).
+    - cron: "40 16-21 * * *"
   workflow_dispatch:
     inputs:
       kick:
