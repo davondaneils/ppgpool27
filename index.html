@@ -2172,7 +2172,7 @@ details.lrow .star{margin-right:-8px}
 .ov b small{text-transform:uppercase}
 
 </style>
-<script>window.APPV="1791748327";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1791900658";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -2217,7 +2217,7 @@ details.lrow .star{margin-right:-8px}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pct=x=>x==null?"–":x<0.005?"<1%":Math.round(x*100)+"%";
-const sgn=x=>(x>0?"+":"")+(Math.round(x*10)/10);
+const sgn=x=>(Math.round(x)>0?"+":"")+Math.round(x);
 const ord=n=>{const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0])};
 const fmtDate=s=>new Date(s+"T12:00:00").toLocaleDateString("en-CA",{month:"short",day:"numeric"});
 const fmtDay=s=>new Date(s+"T12:00:00").toLocaleDateString("en-CA",{weekday:"short",month:"short",day:"numeric"});
@@ -2240,7 +2240,7 @@ const hue=n=>BRANDH[n]!=null?BRANDH[n]:hash(n)%360;
 function av(p,size=""){const c=TEAMC[p.nhl]||"#64748b",ph=PIMG[p.team+"|"+p.name];return `<span class="av ${size}" style="background:linear-gradient(140deg,${c},color-mix(in srgb,${c} 65%,#000))" aria-hidden="true">${esc(initials(p.name))}${ph?`<span class="ph"><img src="img/p/${ph}.webp" alt="" loading="lazy" decoding="async" onerror="this.parentNode.remove()"></span>`:""}${TEAMC[p.nhl]?`<span class="tm"><img src="img/t/${esc(p.nhl)}.webp" alt="" loading="lazy" onerror="this.replaceWith('${esc(p.nhl)}')"></span>`:""}</span>`}
 function tlogo(c,sz=34){return `<img class="tlogo" src="img/t/${esc(c)}.webp" width="${sz}" height="${sz}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`}
 function crest(name,size=""){if(LOGO[name])return `<span class="crest logo ${size}" aria-hidden="true">${LOGO[name]}</span>`;const h=hue(name),h2=(h+40)%360;const ab=name.replace(/[^A-Za-z0-9 ]/g,"").split(/\s+/).filter(w=>!/^(the|for|of|is|will|probably)$/i.test(w)).slice(0,2).map(w=>w[0]).join("").toUpperCase()||"?";return `<span class="crest ${size}" style="background:linear-gradient(135deg,hsl(${h} 62% 44%),hsl(${h2} 70% 30%))" aria-hidden="true">${esc(ab)}</span>`}
-function trend(v,th=0.75){const c=v>th?"up":v<-th?"down":"flat";return `<span class="badge ${c}">${v>th?"▲ ":v<-th?"▼ ":""}${Math.abs(Math.round(v*10)/10)}</span>`}
+function trend(v,th=0.75){const c=v>th?"up":v<-th?"down":"flat";return `<span class="badge ${c}">${v>th?"▲ "+Math.round(v):v<-th?"▼ "+Math.round(-v):"–"}</span>`}
 function places(d,unit=""){return d>0?`<span class="badge up">▲ ${d}${unit}</span>`:d<0?`<span class="badge down">▼ ${-d}${unit}</span>`:`<span class="badge flat">–</span>`}
 const youBadge=n=>n===ME?' <span class="badge you">You</span>':(STARS.has(n)?' <span class="badge" style="color:var(--amber)">★ Rival</span>':"");
 const starBtn=n=>n===ME?"":`<button class="star" data-star="${esc(n)}" aria-pressed="${STARS.has(n)}" aria-label="${STARS.has(n)?"Stop watching":"Watch"} ${esc(n)} as a rival" title="Mark as rival"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>`;
@@ -3016,7 +3016,7 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
   const pp=n=>{const p=inGame.find(q=>{const parts=q.name.split(" ");return nkey(n)===nkey(parts[0][0]+". "+parts.slice(1).join(" "))||nkey(n)===nkey(q.name)});return p?`<b class="${isMine(p)?"gs-me":""}">${esc(n)}</b>`:esc(n)};
   const idx=x.i??9,stake=pc&&idx<2?"Big game":pc?"Matters":inGame.some(isMine)?"Both sides":"Low stakes";
   const mineX=sum(inGame.filter(isMine)),rivX=sum(inGame.filter(isRiv));
-  const verdict=pc?`Your players <b>${mineX.toFixed(1)}</b> pts expected vs rivals <b>${rivX.toFixed(1)}</b>`:inGame.some(isMine)?"Your players are on both sides, so just enjoy it":"None of your players, and no real threats";
+  const verdict=pc?`Your players <b>${Math.round(mineX)}</b> pts expected vs rivals <b>${Math.round(rivX)}</b>`:inGame.some(isMine)?"Your players are on both sides, so just enjoy it":"None of your players, and no real threats";
   const team=(c,i)=>`<div class="gs-t ${pc===c?"rt":pc?"dim":""}">${pc===c&&!fin?`<span class="gs-root">Root for</span>`:`<span class="gs-root ghost"></span>`}${tlogo(c,56)}<b>${c}</b><span class="gs-n">${esc(TEAMN[c]||"")}</span>${started?`<em>${i?lg.hg??0:lg.ag??0}</em>`:""}</div>`;
   const ring=p=>isMine(p)?"fm":isRiv(p)?"fr":"";
   const prow=p=>`<li class="tap" data-p="${pkey(p)}"><span class="gs-av ${ring(p)}">${av(p,"sm")}</span><div class="gs-w"><div class="n">${esc(p.name)}</div><div class="gs-s">${isMine(p)?`<b class="gs-me">Yours</b>`:`${crest(p.team,"xs")}<span class="${isRiv(p)?"gs-thr":""}">${esc(p.team)}</span>`}${role(p)?" · "+role(p):""}${suspLeft(p)?" · suspended":p.lineup==="injured"?" · injured":p.lineup==="scratched"?" · likely scratch":""}</div></div>${started?(()=>{const v=T[p.team+"|"+p.name]||{g:0,a:0},n=v.g+v.a;return n?`<span class="gs-pts on ${ring(p)}"><b>+${n}</b><small>${[v.g?v.g+"G":"",v.a?v.a+"A":""].filter(Boolean).join(" ")}</small></span>`:`<span class="gs-pts"><b>0</b><small>pts</small></span>`})():""}<svg class="gs-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></li>`;
@@ -3025,7 +3025,7 @@ function gameSheet(key){const x=GAMES[key];if(!x)return;const g=x.g,lg=liveGame(
   const sides=pc===g.home?[g.home,g.away]:[g.away,g.home];
   openSheet(`<div class="gs-eb" style="padding-right:44px">${started?(fin?`<span class="gs-fin">Final${lg.period>3?(lg.period===4?" · OT":" · SO"):""}</span>`:`${liveTag(lg)}`):`${fmtDay(g.date)} · ${esc(g.time)} ET`}</div>
    <div class="gs-board">${team(g.away,0)}<div class="gs-at">${started?"–":"at"}</div>${team(g.home,1)}</div>
-   ${pc?`<div class="gs-v gs-v2" id="sheet-title"><div class="gs-vh"><span class="gs-stake ${idx<2?"hi":""}">${stake}</span><span class="gs-vl">Points expected tonight</span></div><div class="gs-fig"><div class="gs-fy"><b>${mineX.toFixed(1)}</b><span>Your players</span></div><span class="gs-vs" aria-hidden="true">vs</span><div class="gs-ft"><b>${rivX.toFixed(1)}</b><span>Threats</span></div></div></div>`:`<div class="gs-v" id="sheet-title"><span class="gs-stake">${stake}</span><span>${verdict}</span></div>`}
+   ${pc?`<div class="gs-v gs-v2" id="sheet-title"><div class="gs-vh"><span class="gs-stake ${idx<2?"hi":""}">${stake}</span><span class="gs-vl">Points expected tonight</span></div><div class="gs-fig"><div class="gs-fy"><b>${Math.round(mineX)}</b><span>Your players</span></div><span class="gs-vs" aria-hidden="true">vs</span><div class="gs-ft"><b>${Math.round(rivX)}</b><span>Threats</span></div></div></div>`:`<div class="gs-v" id="sheet-title"><span class="gs-stake">${stake}</span><span>${verdict}</span></div>`}
    ${started&&lg.goals&&lg.goals.length?`<div class="gs-sec"><h4 class="gs-h">Scoring</h4><ul class="gs-goals">${lg.goals.map(go=>`<li>${tlogo(NHLMAP[go.team]||go.team,18)}<span>${pp(go.scorer)}${go.assists&&go.assists.length?` <span class="gs-a">(${go.assists.map(pp).join(", ")})</span>`:""}</span></li>`).join("")}</ul></div>`:""}
    <div class="gs-sec"><div class="gs-key"><span><i class="fm"></i>Yours</span><span><i class="fr"></i>Threat</span><span class="gs-tip">Tap a player for details</span></div><div class="gs-sides">${sides.map(side).join("")}</div></div>
    ${started?`<p class="gs-foot">Live scores update about once an hour.</p>`:""}`);SHEETG=key}
