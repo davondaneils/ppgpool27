@@ -34,7 +34,7 @@ Personal links: `https://ppgpool.com/?team=<slug>` preselects a team on someone'
 
 `asof` is the date of the last games included (yesterday), not the date the refresh ran. The Pool Pulse header shows the morning after `asof`.
 
-**The bridge.** Hockey-Reference often posts games hours late. For teams it hasn't caught up on, `check.py` credits last night's goals and assists from the NHL.com scoresheets so standings, streaks and the Pulse aren't a day behind (`results.bridge` lists which teams). The next morning the stats source has caught up and its season totals replace these provisional numbers.
+**The bridge.** Hockey-Reference often posts games hours late. For teams it hasn't caught up on, `check.py` credits last night's goals and assists from the NHL.com scoresheets so standings, streaks and the Pulse aren't a day behind (`results.bridge` lists which teams). The next morning the stats source has caught up and its season totals replace these provisional numbers. When it bridges anything, `check.py` also re-runs `model.py` on a throwaway copy of the inputs with those games counted and copies the new projections and odds into `results.json`, so a big night shows up in the odds the same morning.
 
 ## Data files
 
