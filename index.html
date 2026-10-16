@@ -2172,7 +2172,7 @@ details.lrow .star{margin-right:-8px}
 .ov b small{text-transform:uppercase}
 
 </style>
-<script>window.APPV="1791900658";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
+<script>window.APPV="1792186791";(function(){var busy=false;function chk(){if(busy)return;busy=true;fetch("version.json?"+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){busy=false;if(j&&j.v&&j.v!==window.APPV){try{if(sessionStorage.getItem("ppg.rl")===j.v)return;sessionStorage.setItem("ppg.rl",j.v)}catch(e){}location.reload()}}).catch(function(){busy=false})}addEventListener("load",function(){setTimeout(chk,1500)});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")chk()})})();</script>
 </head>
 <body>
 
@@ -2819,12 +2819,12 @@ const ico=k=>`<svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentCol
 function suspLeft(p){const s=p&&p.susp;if(!s||!s.games)return 0;const gp=(R.team_gp||{})[p.nhl];return gp==null?s.games:Math.max(0,s.games-(gp-(s.from_gp||0)))}
 function suspBack(p){const n=suspLeft(p);if(!n)return null;return (R.schedule||[]).filter(x=>x.date>R.asof&&(x.away===p.nhl||x.home===p.nhl))[n]||null}
 const gamesLeft=n=>`${n} game${n>1?"s":""} left`;
-function tagIcon(l,t){return /^PP|power/i.test(l)?"bolt":/shoot|luck|heat up|cool off/i.test(l)?"dice":/minute|ice time|TOI/i.test(l)?"clock":/disagree/i.test(l)?"split":/scratch|not in|lineup/i.test(l)?"minus":/injur|IR|lower|upper|day-to-day|out/i.test(l)?"cross":t==="good"?"up":t==="bad"?"down":null}
-const RELABEL={"Unlucky shooting":"Due to heat up","Lucky shooting":"Due to cool off"};
+function tagIcon(l,t){return /^PP|power/i.test(l)?"bolt":/shoot|luck/i.test(l)?"dice":/minute|ice time|TOI/i.test(l)?"clock":/disagree/i.test(l)?"split":/scratch|not in|lineup/i.test(l)?"minus":/injur|IR|lower|upper|day-to-day|out/i.test(l)?"cross":t==="good"?"up":t==="bad"?"down":null}
+const RELABEL={"Unlucky shooting":"Shooting cold","Lucky shooting":"Shooting hot","Due to heat up":"Shooting cold","Due to cool off":"Shooting hot"},RECLASS={"Shooting cold":"down","Shooting hot":"up"};
 function strk(p){const L=(p.log||[]).filter(l=>l[3]!=null);let h=0,c=0;for(let i=L.length-1;i>=0;i--){const v=L[i][3]+L[i][4];if(v>0){if(c)break;h++}else{if(h)break;c++}}return {hot:h,cold:c}}
 function strkChip(p){const S=strk(p);return S.hot>=4?`<span class="badge hot">${ico("fire")}${S.hot}-game point streak</span>`:S.cold>=4&&p.rate>=0.6&&p.lineup!=="injured"?`<span class="badge cold">${ico("snow")}Pointless in ${S.cold}</span>`:""}
 function chips(p,max=3,noInj){const F=[];const sl=suspLeft(p);if(sl)F.push(`<span class="badge down">${ico("susp")}Suspended · ${gamesLeft(sl)}</span>`);if(!noInj&&!sl&&p.note&&INJ.test(p.note))F.push(`<span class="badge down">${ico("cross")}${esc(p.note.split(",")[0])}</span>`);const sc=strkChip(p);if(sc)F.push(sc);
-  (p.flags||[]).filter(f=>!/^Line|^Pair/.test(f[1])).forEach(([t,l])=>{l=RELABEL[l]||l;const k=tagIcon(l,t);F.push(`<span class="badge ${t==="good"?"up":t==="bad"?"down":""}">${k?ico(k):""}${esc(l)}</span>`)});
+  (p.flags||[]).filter(f=>!/^Line|^Pair/.test(f[1])).forEach(([t,l])=>{l=RELABEL[l]||l;const k=tagIcon(l,t);F.push(`<span class="badge ${RECLASS[l]||(t==="good"?"up":t==="bad"?"down":"")}">${k?ico(k):""}${esc(l)}</span>`)});
   return F.length?`<div class="chips">${F.slice(0,max).join("")}</div>`:""}
 function whatIf(){
   const el=$("#whatif"),t=meT();const sel=store.get("pool.wiPlayer",t.players[0].name);const p=t.players.find(x=>x.name===sel)||t.players[0];
